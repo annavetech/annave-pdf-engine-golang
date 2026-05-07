@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://www.annave.tech/pdf-engine/schema/error.v1",
+  "title": "ANNAVE PDF Engine — Error Response",
+  "description": "JSON body returned on any 4xx or 5xx response from the convert endpoint.",
+  "type": "object",
+  "required": ["error"],
+  "additionalProperties": false,
+  "properties": {
+    "error": {
+      "type": "object",
+      "required": ["code", "stage", "message"],
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^ENGINE_(ERR|OK|WARN)_[A-Z_]+$",
+          "description": "Machine-readable code. Pattern: ENGINE_CATEGORY_SLUG. Category is ERR (error), OK (success event), or WARN (warning).",
+          "examples": [
+            "ENGINE_ERR_FILE_TOO_LARGE",
+            "ENGINE_ERR_PARSE_FAILED",
+            "ENGINE_ERR_RENDER_FAILED"
+          ]
+        },
+        "stage": {
+          "type": "string",
+          "enum": ["input", "parser", "validation", "layout", "pagination", "render"],
+          "description": "Pipeline stage where the error occurred."
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable description of the error."
+        }
+      }
+    }
+  }
+}

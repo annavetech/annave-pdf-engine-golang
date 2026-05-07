@@ -1,0 +1,148 @@
+# ANNAVE PDF Engine — Document Style Configuration
+#
+# All sizes are in CSS pixels at 96 DPI.
+# 1 px at 96 DPI = 0.2646 mm = 0.75 pt
+#
+# Page dimensions: A4 = 210 × 297 mm = 794 × 1123 px at 96 DPI.
+#
+# To apply a custom style: edit these values and rebuild the binary.
+# The binary embeds this file; no external file is needed at runtime.
+
+page:
+  # Page width in px. A4 = 794 px (210 mm). Letter = 816 px (215.9 mm).
+  # Changing this without also adjusting margin_x_px will shift the text area.
+  width_px:         794
+
+  # Page height in px. A4 = 1123 px (297 mm). Letter = 1056 px (279.4 mm).
+  height_px:        1123
+
+  # Left and right margin, in px, applied equally on both sides.
+  # At 56 px margins on A4 (794 px wide): text column = 794 - (2 × 56) = 682 px.
+  #
+  # What breaks with wrong values:
+  #   < 20 px  — text runs to the edge; looks broken, text may clip on some printers.
+  #   > 150 px — text column becomes too narrow; long words cause excessive hyphenation.
+  #
+  # Common values:
+  #   40 px   (tight — maximises content area)
+  #   56 px   (default — ~15 mm, standard document margin)
+  #   72 px   (generous — ~19 mm, print-ready look)
+  margin_x_px:      56
+
+  # Top margin, in px.
+  # Controls the blank space before the first content block on each page.
+  #
+  # Common values:
+  #   36 px   (compact)
+  #   48 px   (default — ~12.7 mm)
+  #   72 px   (generous — leaves room for a running header if added later)
+  margin_top_px:    48
+
+  # Bottom margin, in px.
+  # Controls how close the last line on a page gets to the page edge.
+  # If this is too small, pagination may place a last line uncomfortably close
+  # to the bottom.
+  #
+  # Common values:
+  #   36 px   (compact)
+  #   48 px   (default — ~12.7 mm)
+  #   72 px   (generous)
+  margin_bottom_px: 48
+
+fonts:
+  # Font-family string for body text, headings, and UI-like text.
+  # gopdf resolves the first family it recognises. Inter is embedded in the binary.
+  # Remaining families are fallbacks for environments where Inter is unavailable.
+  sans: '"Inter", -apple-system, "SF Pro Display", BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif'
+
+  # Font-family string for code blocks and inline code spans.
+  # JetBrains Mono is embedded in the binary.
+  mono: '"JetBrains Mono", "SF Mono", "Menlo", "Monaco", "Consolas", "Liberation Mono", monospace'
+
+text_styles:
+  # Each style applies to one block-level element type.
+  # Fields:
+  #   font_family     — "sans" or "mono" (references the keys above)
+  #   font_size_px    — text size in CSS pixels at 96 DPI
+  #                     13 px ≈ 9.75 pt ≈ 3.44 mm cap height
+  #   font_weight     — "400" (regular), "600" (semibold), "700" (bold), "800" (extrabold)
+  #   font_style      — "normal" or "italic"
+  #   line_height     — unitless multiplier on font_size_px
+  #                     1.65 at 13 px = 21.45 px between baselines
+  #   margin_bottom_px — blank space added below each block of this type
+  #   color           — hex colour string; must be 7-character "#rrggbb"
+
+  heading1:
+    # Used for H1 / # in Markdown / Heading1 in DOCX.
+    # At 28 px (21 pt): renders prominently, clearly distinguishable from H2.
+    # Reducing below 22 px makes H1 and H2 visually indistinguishable.
+    font_family:    sans
+    font_size_px:   28
+    font_weight:    "800"
+    font_style:     normal
+    line_height:    1.1
+    margin_bottom_px: 20
+    color:          "#1d1d1f"
+
+  heading2:
+    # Used for H2 / ## in Markdown / Heading2 in DOCX.
+    # At 20 px (15 pt): clearly a section title, distinct from body text.
+    font_family:    sans
+    font_size_px:   20
+    font_weight:    "700"
+    font_style:     normal
+    line_height:    1.2
+    margin_bottom_px: 16
+    color:          "#1d1d1f"
+
+  heading3:
+    # Used for H3 / ### in Markdown / Heading3 in DOCX.
+    # At 15 px (11.25 pt): subsection label; only 2 px above body text.
+    # Reducing to 13 px makes H3 indistinguishable from a bold paragraph.
+    font_family:    sans
+    font_size_px:   15
+    font_weight:    "600"
+    font_style:     normal
+    line_height:    1.3
+    margin_bottom_px: 12
+    color:          "#1d1d1f"
+
+  paragraph:
+    # Body text — the most common element.
+    # 13 px / 1.65 line height = 21.45 px between baselines ≈ comfortable reading.
+    #
+    # What breaks with wrong values:
+    #   font_size_px < 10  — text becomes hard to read; may clip on screen preview.
+    #   font_size_px > 16  — body text competes visually with H3.
+    #   line_height < 1.2  — lines are too tight; descenders overlap ascenders in some fonts.
+    #   line_height > 2.0  — excessive whitespace; pages fill up faster, increasing page count.
+    font_family:    sans
+    font_size_px:   13
+    font_weight:    "400"
+    font_style:     normal
+    line_height:    1.65
+    margin_bottom_px: 12
+    color:          "#3a3a3c"
+
+  code:
+    # Code blocks (fenced ``` in Markdown, <pre> in HTML, w:rPr w:rFonts with Courier in DOCX).
+    # 11 px monospace at 1.6 line height: lines are dense but readable.
+    # Reducing font_size_px below 9 makes code blocks effectively unreadable in print.
+    font_family:    mono
+    font_size_px:   11
+    font_weight:    "400"
+    font_style:     normal
+    line_height:    1.6
+    margin_bottom_px: 12
+    color:          "#1d1d1f"
+
+  blockquote:
+    # Block quotations (> in Markdown, <blockquote> in HTML).
+    # Italic at paragraph size, slightly darker than default paragraph.
+    font_family:    sans
+    font_size_px:   13
+    font_weight:    "400"
+    font_style:     italic
+    line_height:    1.65
+    margin_bottom_px: 12
+    color:          "#3a3a3c"

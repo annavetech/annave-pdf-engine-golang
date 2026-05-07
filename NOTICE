@@ -1,0 +1,35 @@
+ANNAVE PDF Engine
+Copyright 2026 Anna Veretennykova <contact@annave.tech>
+https://www.annave.tech
+
+This product includes software from the following open-source projects:
+
+  gopdf
+  Copyright (c) signintech
+  License: MIT
+  Source:  https://github.com/signintech/gopdf
+
+  bluemonday
+  Copyright (c) 2014, David Kitchen <david@buro9.com>
+  License: BSD 2-Clause
+  Source:  https://github.com/microcosm-cc/bluemonday
+
+  golang.org/x/image
+  Copyright (c) The Go Authors
+  License: BSD 3-Clause
+  Source:  https://pkg.go.dev/golang.org/x/image
+
+  golang.org/x/net
+  Copyright (c) The Go Authors
+  License: BSD 3-Clause
+  Source:  https://pkg.go.dev/golang.org/x/net
+
+  Inter Typeface
+  Copyright (c) 2016 The Inter Project Authors
+  License: SIL Open Font License 1.1
+  Source:  https://github.com/rsms/inter
+
+  JetBrains Mono
+  Copyright (c) 2020 The JetBrains Mono Project Authors
+  License: SIL Open Font License 1.1
+  Source:  https://github.com/JetBrains/JetBrainsMono

@@ -1,0 +1,58 @@
+# ANNAVE PDF Engine — Server Configuration
+#
+# These values control the HTTP server, CORS policy, and optional features.
+# Environment variables override values in this file where noted.
+#
+# To apply changes: edit this file and rebuild the binary.
+# The binary embeds this file; no external file is needed at runtime.
+
+server:
+  # TCP port the HTTP server listens on.
+  # Override with the PORT environment variable.
+  # Vercel and most PaaS platforms set PORT automatically.
+  #
+  # Common values: 5741 (local dev), 3000 (Node convention), 443 (TLS termination elsewhere)
+  port: 5741
+
+  # Enable verbose debug logging.
+  # When true: request bodies and internal state are logged.
+  # NEVER enable in production — logs may contain sensitive document data.
+  # Override with ANNAVE_DEBUG=true environment variable.
+  debug: false
+
+cors:
+  # Allowed origin for cross-origin browser requests.
+  # Wildcard (*) permits any origin — acceptable for local development and
+  # public APIs where the endpoint itself has no user session or cookie state.
+  #
+  # In production, restrict to your domain to prevent credential leakage:
+  #   allowed_origin: "https://www.annave.tech"
+  #
+  # What breaks with wrong values:
+  #   "*" in production with cookies — browsers block cross-origin cookie sends anyway,
+  #       but some proxies may strip the header, causing unexpected CORS failures.
+  #   Wrong domain — browser preflight requests receive 403; the UI cannot call the API.
+  #
+  # Override with ANNAVE_CORS_ORIGIN environment variable.
+  allowed_origin: "*"
+
+schema:
+  # Base URL prepended to JSON Schema $id fields when schemas are referenced.
+  # Change this if you fork the engine and host your own schema registry.
+  # This value is informational — the engine does not fetch schemas at runtime.
+  #
+  # Do NOT add a trailing slash.
+  base_url: "https://www.annave.tech/pdf-engine/schema"
+
+rate_limit:
+  # Per-IP sliding-window request limit. 0 = rate limiting disabled.
+  # When enabled, requests exceeding the limit receive ENGINE_ERR_RATE_LIMITED (HTTP 429).
+  #
+  # This is a placeholder for future implementation. Setting a non-zero value
+  # currently has no effect — the rate limiter is not yet wired up.
+  #
+  # Common values:
+  #   0     (disabled — suitable when an upstream gateway handles rate limiting)
+  #   60    (1 request per second per IP — strict)
+  #   300   (5 requests per second per IP — typical public API)
+  requests_per_minute: 0
