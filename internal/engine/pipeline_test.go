@@ -6,6 +6,9 @@ package engine
 
 import (
 	"bytes"
+	"image"
+	"image/color"
+	"image/png"
 	"os"
 	"strings"
 	"testing"
@@ -91,9 +94,72 @@ More content here to ensure multi-node output.
 	}
 }
 
+// TestPipeline_Run_PNG verifies that a PNG image is correctly converted to a
+// valid PDF. gopdf's parsePng is strict: it rejects interlaced and 16-bit PNGs,
+// so this test uses a small standard 8-bit RGBA image.
+func TestPipeline_Run_PNG(t *testing.T) {
+	imgBytes := makePNG(t, 64, 64)
+
+	p := NewPipeline()
+	out, err := p.Run(string(imgBytes), parser.FormatAuto)
+	if err != nil {
+		t.Fatalf("pipeline.Run() error for PNG input: %v", err)
+	}
+	if !bytes.HasPrefix(out, []byte("%PDF-")) {
+		t.Fatalf("output is not a PDF — first bytes: %q", out[:min(16, len(out))])
+	}
+	if len(out) < 1000 {
+		t.Errorf("PDF suspiciously small (%d bytes)", len(out))
+	}
+}
+
+// makePNG builds a minimal valid 8-bit RGB PNG of the given dimensions.
+func makePNG(t *testing.T, w, h int) []byte {
+	t.Helper()
+	img := image.NewRGBA(image.Rect(0, 0, w, h))
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			img.Set(x, y, color.RGBA{R: uint8(x * 4), G: uint8(y * 4), B: 128, A: 255})
+		}
+	}
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, img); err != nil {
+		t.Fatalf("failed to encode test PNG: %v", err)
+	}
+	return buf.Bytes()
+}
+
 func min(a, b int) int {
 	if a < b {
 		return a
 	}
 	return b
+}
+
+func TestPipeline_Run_AllTextFormats(t *testing.T) {
+	cases := []struct {
+		name   string
+		format parser.InputFormat
+		input  string
+	}{
+		{"html", parser.FormatHTML, "<h1>Hello</h1><p>World</p>"},
+		{"json", parser.FormatJSON, `{"title":"Test","body":"Hello world content here."}`},
+		{"csv", parser.FormatCSV, "Name,Age,City\nAlice,30,NYC\nBob,25,LA"},
+		{"yaml", parser.FormatYAML, "title: Test\nbody: Hello world"},
+		{"xml", parser.FormatXML, "<root><title>Hello</title><body>World</body></root>"},
+		{"rst", parser.FormatRST, "Hello World\n===========\n\nThis is a paragraph.\n"},
+		{"txt", parser.FormatTxt, "Hello world. This is plain text."},
+	}
+	p := NewPipeline()
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			out, err := p.Run(tc.input, tc.format)
+			if err != nil {
+				t.Fatalf("pipeline.Run(%s) error: %v", tc.name, err)
+			}
+			if !bytes.HasPrefix(out, []byte("%PDF-")) {
+				t.Fatalf("output for %s is not a PDF — first bytes: %q", tc.name, out[:min(16, len(out))])
+			}
+		})
+	}
 }

@@ -1,7 +1,17 @@
 # Changelog
 
-All notable changes to ANNÁVE PDF Engine are documented here.
+All notable changes to ANNAVE PDF Engine are documented here.
 Versioning follows [Semantic Versioning](https://semver.org/).
+
+---
+
+## [1.0.4] — 2026-05-07
+
+### Fixed
+- Renderer: `ImageByHolder` and `ImageHolderByBytes` errors are now logged via `slog.Warn` instead of being silently swallowed, making image rendering failures visible in production logs.
+
+### Added
+- Pipeline tests covering all text formats (HTML, JSON, CSV, YAML, XML, RST, TXT) and PNG image input to guard against regressions.
 
 ---
 
