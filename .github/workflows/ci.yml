@@ -1,0 +1,15 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  go:
+    # Calls the central ANNÁVE TECH reusable Go workflow (ANNAVE-1364), which lives in the
+    # annavetechhq org's own .github repo. Pinned to @main deliberately, not a SHA: this is
+    # Anna's own repo (not a third-party action), so the usual full-SHA supply-chain rule does
+    # not apply the same way here — she controls what "main" points at.
+    uses: annavetechhq/.github/.github/workflows/go-ci.yml@main
