@@ -78,7 +78,7 @@ func (h *Handler) convert(w http.ResponseWriter, r *http.Request) {
 		// File upload takes priority
 		file, header, err := r.FormFile("file")
 		if err == nil {
-			defer file.Close()
+			defer func() { _ = file.Close() }()
 			if format == parser.FormatAuto {
 				format = parser.FormatFromExtension(header.Filename)
 			}
@@ -184,9 +184,9 @@ func (h *Handler) health(w http.ResponseWriter, _ *http.Request) {
 
 type errorBody struct {
 	Error struct {
-		Code    string            `json:"code"`
+		Code    string             `json:"code"`
 		Stage   engine.EngineStage `json:"stage"`
-		Message string            `json:"message"`
+		Message string             `json:"message"`
 	} `json:"error"`
 }
 

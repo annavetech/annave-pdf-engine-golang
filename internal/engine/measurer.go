@@ -51,15 +51,15 @@ type LayoutLine struct {
 
 // TextMeasurer measures text using embedded Inter/JetBrains Mono fonts.
 type TextMeasurer struct {
-	mu        sync.Mutex
+	mu          sync.Mutex
 	parsedFonts map[string]*opentype.Font // "inter-400-normal" → parsed font
-	faces     map[string]font.Face       // fontKey → face
-	cache     map[string]float64         // "fontKey|text" → width in px
+	faces       map[string]font.Face      // fontKey → face
+	cache       map[string]float64        // "fontKey|text" → width in px
 }
 
 var (
-	measurerOnce     sync.Once
-	globalMeasurer   *TextMeasurer
+	measurerOnce   sync.Once
+	globalMeasurer *TextMeasurer
 )
 
 func GetMeasurer() *TextMeasurer {
@@ -334,9 +334,8 @@ func (m *TextMeasurer) tokenize(seg TextSegment) []MeasuredToken {
 
 func (m *TextMeasurer) splitWord(word string, seg TextSegment, maxWidth float64) []MeasuredToken {
 	var result []MeasuredToken
-	runes := []rune(word)
 	fragment := ""
-	for _, ch := range runes {
+	for _, ch := range word {
 		candidate := fragment + string(ch)
 		w := m.measureText(candidate, seg)
 		if w <= maxWidth {

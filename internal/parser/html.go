@@ -74,7 +74,7 @@ func walkHTMLBlock(n *html.Node, out *[]ast.Node, inBlockquote, inPre bool) {
 			if text == "" {
 				continue
 			}
-			level := int(tag[1]-'0')
+			level := int(tag[1] - '0')
 			if level > 3 {
 				level = 3
 			}

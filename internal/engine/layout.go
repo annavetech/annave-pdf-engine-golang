@@ -13,19 +13,19 @@ import (
 
 // Layout constants — must match paginator.go
 const (
-	listItemGap     = 4
-	tableRowH       = 26
-	tableHeaderH    = 30
-	codePadding     = 24
-	langLabelH      = 9
-	langLabelGap    = 4
-	quotePadding    = 16
-	quoteIndent     = 35
-	codeIndent      = 32
-	hrHeight        = 1
-	hrSpacing       = 16
+	listItemGap       = 4
+	tableRowH         = 26
+	tableHeaderH      = 30
+	codePadding       = 24
+	langLabelH        = 9
+	langLabelGap      = 4
+	quotePadding      = 16
+	quoteIndent       = 35
+	codeIndent        = 32
+	hrHeight          = 1
+	hrSpacing         = 16
 	imageHeightInline = 80
-	imageMaxHeight  = 700
+	imageMaxHeight    = 700
 )
 
 type LayoutBox struct {
@@ -43,7 +43,6 @@ type LayoutBox struct {
 }
 
 type LayoutEngine struct {
-	docStyle TextStyle // unused directly; access via DocStyle
 	measurer *TextMeasurer
 }
 

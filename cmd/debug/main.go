@@ -15,7 +15,7 @@ import (
 
 func main() {
 	path := os.Args[1]
-	data, _ := os.ReadFile(path)
+	data, _ := os.ReadFile(path) //nolint:gosec // path is the local dev debug tool's CLI argument, not external input
 	input := string(data)
 
 	normalized, _ := engine.NormalizeInput(input)

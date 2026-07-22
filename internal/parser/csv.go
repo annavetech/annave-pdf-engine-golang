@@ -37,7 +37,7 @@ func (p *CsvParser) Parse(input string) (*ast.DocumentNode, error) {
 		rows = append(rows, cells[:len(headers)])
 	}
 	return &ast.DocumentNode{
-		Type: ast.TypeDocument,
+		Type:     ast.TypeDocument,
 		Children: []ast.Node{{Type: ast.TypeTable, Headers: headers, Rows: rows}},
 	}, nil
 }

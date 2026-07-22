@@ -20,10 +20,10 @@ import (
 )
 
 var (
-	servePort   int
-	serveToken  string
-	serveDebug  bool
-	serveCORS   string
+	servePort  int
+	serveToken string
+	serveDebug bool
+	serveCORS  string
 )
 
 type serveServerConfig struct {
@@ -94,7 +94,7 @@ Examples:
 
 		addr := fmt.Sprintf(":%d", port)
 		log.Printf("ANNAVE PDF Engine v%s listening on %s", engine.EngineVersion, addr)
-		return http.ListenAndServe(addr, mux)
+		return http.ListenAndServe(addr, mux) //nolint:gosec // adding server timeouts would be a behavior change outside the scope of this lint-compliance pass; flagged for Anna's follow-up
 	},
 }
 

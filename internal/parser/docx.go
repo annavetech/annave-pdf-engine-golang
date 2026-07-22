@@ -49,7 +49,7 @@ func (p *DocxParser) Parse(input string) (*ast.DocumentNode, error) {
 	if err != nil {
 		return nil, fmt.Errorf("docx: open document.xml: %w", err)
 	}
-	defer rc.Close()
+	defer func() { _ = rc.Close() }()
 
 	xmlData, err := io.ReadAll(rc)
 	if err != nil {
@@ -100,7 +100,7 @@ func docxParseRels(zr *zip.Reader) map[string]string {
 	if err != nil {
 		return nil
 	}
-	defer rc.Close()
+	defer func() { _ = rc.Close() }()
 	data, err := io.ReadAll(rc)
 	if err != nil {
 		return nil
@@ -148,7 +148,7 @@ func docxParseNumbering(f *zip.File) map[string]bool {
 	if err != nil {
 		return nil
 	}
-	defer rc.Close()
+	defer func() { _ = rc.Close() }()
 	data, err := io.ReadAll(rc)
 	if err != nil {
 		return nil
@@ -726,7 +726,7 @@ func docxImageNode(rID string, rels map[string]string, zr *zip.Reader) (ast.Node
 	if err != nil {
 		return ast.Node{}, false
 	}
-	defer rc.Close()
+	defer func() { _ = rc.Close() }()
 	data, err := io.ReadAll(rc)
 	if err != nil {
 		return ast.Node{}, false

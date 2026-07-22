@@ -119,7 +119,7 @@ func makePNG(t *testing.T, w, h int) []byte {
 	img := image.NewRGBA(image.Rect(0, 0, w, h))
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
-			img.Set(x, y, color.RGBA{R: uint8(x * 4), G: uint8(y * 4), B: 128, A: 255})
+			img.Set(x, y, color.RGBA{R: uint8(x * 4), G: uint8(y * 4), B: 128, A: 255}) //nolint:gosec // test-only pixel pattern generator; intentional wraparound for small fixture dimensions
 		}
 	}
 	var buf bytes.Buffer

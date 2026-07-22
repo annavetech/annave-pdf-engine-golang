@@ -61,7 +61,7 @@ Examples:
 			sourceName = "stdin"
 		} else {
 			path := args[0]
-			data, err := os.ReadFile(path)
+			data, err := os.ReadFile(path) //nolint:gosec // path is the CLI's positional input-file argument, provided directly by the operator
 			if err != nil {
 				return fmt.Errorf("reading %s: %w", path, err)
 			}
@@ -104,7 +104,7 @@ Examples:
 			return err
 		}
 
-		if err := os.WriteFile(convertOutput, pdfBytes, 0644); err != nil {
+		if err := os.WriteFile(convertOutput, pdfBytes, 0600); err != nil {
 			return fmt.Errorf("writing %s: %w", convertOutput, err)
 		}
 		fmt.Fprintf(os.Stderr, "Converted %s → %s (%d bytes)\n", sourceName, convertOutput, len(pdfBytes))

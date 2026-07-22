@@ -13,11 +13,11 @@ const (
 )
 
 type PageBox struct {
-	LayoutBox             // embedded
-	PageY      float64
-	LineSlice  *[2]int   // [start, end) of Lines to render
-	ItemSlice  *[2]int   // [start, end) of ItemLines to render
-	RowSlice   *[2]int   // [start, end) of node.Rows to render
+	LayoutBox // embedded
+	PageY     float64
+	LineSlice *[2]int // [start, end) of Lines to render
+	ItemSlice *[2]int // [start, end) of ItemLines to render
+	RowSlice  *[2]int // [start, end) of node.Rows to render
 	// HeightOverride replaces LayoutBox.Height when non-zero.
 	HeightOverride float64
 }

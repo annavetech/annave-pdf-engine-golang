@@ -37,7 +37,7 @@ var extToFormat = map[string]InputFormat{
 	"ipynb": FormatIPYNB,
 	"docx":  FormatDocx,
 	"png":   FormatImage, "jpg": FormatImage, "jpeg": FormatImage,
-	"gif":   FormatImage, "webp": FormatImage,
+	"gif": FormatImage, "webp": FormatImage,
 }
 
 type Registry struct {
@@ -117,4 +117,3 @@ func FormatFromExtension(filename string) InputFormat {
 	}
 	return FormatAuto
 }
-

@@ -12,9 +12,8 @@ import (
 )
 
 var (
-	yamlKeyValue   = regexp.MustCompile(`^[a-zA-Z0-9_"'][^:]*\s*:`)
-	yamlTopList    = regexp.MustCompile(`^- `)
-	yamlFieldColon = regexp.MustCompile(`^([^:]+):\s*(.*)$`)
+	yamlKeyValue = regexp.MustCompile(`^[a-zA-Z0-9_"'][^:]*\s*:`)
+	yamlTopList  = regexp.MustCompile(`^- `)
 )
 
 type YamlParser struct{}

@@ -26,8 +26,12 @@ func (p *IpynbParser) CanParse(input string) bool {
 func (p *IpynbParser) Parse(input string) (*ast.DocumentNode, error) {
 	var nb struct {
 		Metadata *struct {
-			Kernelspec   *struct{ Language string `json:"language"` } `json:"kernelspec"`
-			LanguageInfo *struct{ Name string `json:"name"` }      `json:"language_info"`
+			Kernelspec *struct {
+				Language string `json:"language"`
+			} `json:"kernelspec"`
+			LanguageInfo *struct {
+				Name string `json:"name"`
+			} `json:"language_info"`
 		} `json:"metadata"`
 		Cells []struct {
 			CellType string      `json:"cell_type"`

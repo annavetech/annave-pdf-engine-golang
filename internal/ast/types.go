@@ -6,13 +6,13 @@ package ast
 
 // InlineSpan kinds
 const (
-	SpanText      = "text"
-	SpanBold      = "bold"
-	SpanItalic    = "italic"
+	SpanText       = "text"
+	SpanBold       = "bold"
+	SpanItalic     = "italic"
 	SpanBoldItalic = "bold-italic"
-	SpanCode      = "code"
-	SpanStrike    = "strike"
-	SpanLink      = "link"
+	SpanCode       = "code"
+	SpanStrike     = "strike"
+	SpanLink       = "link"
 )
 
 type InlineSpan struct {
@@ -35,7 +35,7 @@ const (
 )
 
 type HeadingNode struct {
-	Type  string       `json:"type"` // "heading"
+	Type  string       `json:"type"`  // "heading"
 	Level int          `json:"level"` // 1|2|3
 	Text  string       `json:"text"`
 	Spans []InlineSpan `json:"spans,omitempty"`

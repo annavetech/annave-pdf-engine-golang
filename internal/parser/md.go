@@ -52,8 +52,7 @@ func (p *MdParser) Parse(input string) (*ast.DocumentNode, error) {
 			var codeLines []string
 			closingPrefix := strings.Repeat(fenceChar, fenceLen)
 			for i < len(lines) {
-				if strings.HasPrefix(strings.TrimSpace(lines[i]), closingPrefix) &&
-					strings.TrimSpace(lines[i]) == strings.TrimSpace(lines[i]) {
+				if strings.HasPrefix(strings.TrimSpace(lines[i]), closingPrefix) {
 					// check it's a closing fence
 					cl := strings.TrimSpace(lines[i])
 					allFence := true

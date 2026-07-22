@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	pxToMm     = 25.4 / 96.0 // 1 CSS pixel → mm at 96 DPI
+	pxToMm       = 25.4 / 96.0 // 1 CSS pixel → mm at 96 DPI
 	pageWidthMm  = 794 * pxToMm
 	pageHeightMm = 1123 * pxToMm
 )
@@ -199,7 +199,7 @@ func (r *Renderer) renderBox(pb PageBox) error {
 			for ci, h := range headers {
 				cw := mm(colWidths[ci])
 				r.pdf.SetFillColor(235, 235, 235)
-				r.pdf.Rectangle(cx, y, cx+cw, y+hh, "FD", 0, 0)
+				_ = r.pdf.Rectangle(cx, y, cx+cw, y+hh, "FD", 0, 0)
 				r.pdf.SetTextColor(hexToRGB(style.Color))
 				r.pdf.SetX(cx + mm(4))
 				r.pdf.SetY(y + (hh-mm(style.FontSize))/2)
@@ -235,7 +235,7 @@ func (r *Renderer) renderBox(pb PageBox) error {
 			for ci := range colWidths {
 				cw := mm(colWidths[ci])
 				r.pdf.SetFillColor(rowR, rowG, rowB)
-				r.pdf.Rectangle(cx, y, cx+cw, y+rh, "FD", 0, 0)
+				_ = r.pdf.Rectangle(cx, y, cx+cw, y+rh, "FD", 0, 0)
 				r.pdf.SetTextColor(hexToRGB(style.Color))
 
 				cell := ""
@@ -264,7 +264,7 @@ func (r *Renderer) renderBox(pb PageBox) error {
 	case "code-block":
 		// Background rect
 		r.pdf.SetFillColor(246, 246, 246)
-		r.pdf.Rectangle(x, y, x+w, y+mm(pb.Height), "F", 0, 0)
+		_ = r.pdf.Rectangle(x, y, x+w, y+mm(pb.Height), "F", 0, 0)
 
 		fn := fnMono
 		_ = r.pdf.SetFont(fn, "", style.FontSize*pxToMm*2.835)
@@ -334,7 +334,7 @@ func (r *Renderer) renderBox(pb PageBox) error {
 		}
 		if !rendered {
 			r.pdf.SetFillColor(240, 240, 240)
-			r.pdf.Rectangle(x, y, x+w, y+mm(pb.Height), "F", 0, 0)
+			_ = r.pdf.Rectangle(x, y, x+w, y+mm(pb.Height), "F", 0, 0)
 			if node.Alt != "" {
 				_ = r.pdf.SetFont(fnInterRegular, "", style.FontSize*pxToMm*2.835)
 				r.pdf.SetTextColor(100, 100, 100)
@@ -404,7 +404,7 @@ func hexToRGB(hex string) (uint8, uint8, uint8) {
 		return 0, 0, 0
 	}
 	var r, g, b uint8
-	fmt.Sscanf(hex, "%02x%02x%02x", &r, &g, &b)
+	_, _ = fmt.Sscanf(hex, "%02x%02x%02x", &r, &g, &b)
 	return r, g, b
 }
 
