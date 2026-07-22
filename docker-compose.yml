@@ -1,0 +1,17 @@
+services:
+  pdf-engine:
+    build: .
+    ports:
+      - "${PORT:-5741}:5741"
+    environment:
+      PORT: "${PORT:-5741}"
+      ANNAVE_INTERNAL_TOKEN: "${ANNAVE_INTERNAL_TOKEN:-}"
+      ANNAVE_DEBUG: "${ANNAVE_DEBUG:-false}"
+      ANNAVE_CORS_ORIGIN: "${ANNAVE_CORS_ORIGIN:-*}"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5741/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s

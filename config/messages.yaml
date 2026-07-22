@@ -1,0 +1,31 @@
+# ANNAVE PDF Engine — Error and Status Messages
+#
+# All user-facing messages are defined here.
+# Error codes follow the pattern ENGINE_ERR_SLUG.
+#   ENGINE = this engine
+#   ERR    = it is an error (not success, not warning)
+#   SLUG   = what went wrong, self-documenting, no number needed
+#
+# Success events follow ENGINE_OK_SLUG (used in structured logs, not API responses).
+#
+# Placeholders use {name} syntax and are interpolated at runtime.
+# Example: "File exceeds {max_mb} MB." with max_mb=5 → "File exceeds 5 MB."
+
+errors:
+  ENGINE_ERR_FILE_TOO_LARGE:     "File exceeds the maximum allowed size of {max_mb} MB."
+  ENGINE_ERR_EMPTY_INPUT:        "No input was provided."
+  ENGINE_ERR_INPUT_TOO_LARGE:    "Input exceeds the maximum allowed length of {max_chars} characters."
+  ENGINE_ERR_UNSUPPORTED_FORMAT: "Format {format} is not supported. Supported formats: md, html, json, csv, yaml, xml, rst, ipynb, docx, png, jpg, gif, webp."
+  ENGINE_ERR_PARSE_FAILED:       "The document could not be parsed: {detail}"
+  ENGINE_ERR_INVALID_DOCUMENT:   "Document structure is invalid: {detail}"
+  ENGINE_ERR_INVALID_NODE:       "Document contains an invalid node: {detail}"
+  ENGINE_ERR_TOO_MANY_NODES:     "Document exceeds the maximum node count of {max_nodes}. Reduce the document size or increase max_nodes in config/limits.yaml."
+  ENGINE_ERR_TOO_MANY_PAGES:     "Document produced {page_count} pages; the maximum is {max_pages}. Reduce the document size or increase max_pages in config/limits.yaml."
+  ENGINE_ERR_RENDERER_INIT:      "PDF renderer could not be initialised: {detail}"
+  ENGINE_ERR_RENDER_FAILED:      "PDF rendering failed: {detail}"
+  ENGINE_ERR_INTERNAL:           "An internal error occurred. Please report this at https://github.com/annavetech/annave-pdf-engine-golang-golang/issues"
+  ENGINE_ERR_UNAUTHORIZED:       "Missing or invalid internal token."
+  ENGINE_ERR_RATE_LIMITED:       "Too many requests. Retry after {retry_after} seconds."
+
+success:
+  ENGINE_OK_CONVERTED: "Document converted successfully."

@@ -8,12 +8,47 @@
 *.env
 *.token
 *.secret
-secrets.*
+/secrets.*
 .envrc
 *.pem
 
-# OS / editor
+# macOS
 .DS_Store
 Thumbs.db
-.idea/
+
+# IDEs
 .vscode/
+.idea/
+
+# Binaries
+/server
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Build output
+/bin/
+/dist/
+/build/
+
+# Coverage
+coverage.out
+*.coverprofile
+
+# Go workspace
+go.work
+go.work.sum
+
+# Environment files
+.env.local
+
+# Logs
+*.log
+
+# Temporary files
+/tmp/
+/temp/

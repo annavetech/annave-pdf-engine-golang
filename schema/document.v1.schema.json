@@ -1,0 +1,203 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://www.annave.tech/pdf-engine/schema/document.v1",
+  "title": "ANNAVE PDF Engine — Document",
+  "description": "The canonical document representation accepted by the engine's JSON input endpoint. All other formats (Markdown, HTML, CSV, etc.) are converted to this structure internally before layout and rendering.",
+  "type": "object",
+  "required": ["type", "children"],
+  "additionalProperties": false,
+  "properties": {
+    "type": {
+      "const": "document",
+      "description": "Must be the string \"document\"."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+",
+      "description": "Schema version. Currently \"1\". The engine accepts any value whose major component is 1."
+    },
+    "children": {
+      "type": "array",
+      "description": "Ordered list of block-level nodes that make up the document body.",
+      "items": { "$ref": "#/$defs/block" }
+    }
+  },
+  "$defs": {
+    "block": {
+      "description": "A block-level document node.",
+      "oneOf": [
+        { "$ref": "#/$defs/heading" },
+        { "$ref": "#/$defs/paragraph" },
+        { "$ref": "#/$defs/list" },
+        { "$ref": "#/$defs/table" },
+        { "$ref": "#/$defs/codeBlock" },
+        { "$ref": "#/$defs/blockquote" },
+        { "$ref": "#/$defs/hr" },
+        { "$ref": "#/$defs/image" }
+      ]
+    },
+    "inlineSpan": {
+      "type": "object",
+      "required": ["kind", "text"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["text", "bold", "italic", "bold-italic", "code", "strike", "link"],
+          "description": "Inline formatting kind."
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "href": {
+          "type": "string",
+          "description": "Required when kind is \"link\"."
+        }
+      }
+    },
+    "heading": {
+      "type": "object",
+      "required": ["type", "level", "text"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "heading" },
+        "level": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3,
+          "description": "Heading level. Only levels 1–3 are supported."
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Plain-text content. Used for layout measurement."
+        },
+        "spans": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/inlineSpan" },
+          "description": "Rich inline content. If omitted the engine derives spans from text."
+        }
+      }
+    },
+    "paragraph": {
+      "type": "object",
+      "required": ["type", "text"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "paragraph" },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "spans": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/inlineSpan" }
+        }
+      }
+    },
+    "list": {
+      "type": "object",
+      "required": ["type", "items"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "list" },
+        "ordered": {
+          "type": "boolean",
+          "default": false,
+          "description": "True for numbered lists, false for bullet lists."
+        },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "itemSpans": {
+          "type": "array",
+          "description": "Per-item inline spans. Must have the same length as items when provided.",
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/inlineSpan" }
+          }
+        }
+      }
+    },
+    "table": {
+      "type": "object",
+      "required": ["type", "headers", "rows"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "table" },
+        "headers": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "codeBlock": {
+      "type": "object",
+      "required": ["type", "text"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "code-block" },
+        "language": {
+          "type": "string",
+          "description": "Programming language hint (e.g. \"go\", \"python\"). Used only for display."
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "blockquote": {
+      "type": "object",
+      "required": ["type", "spans"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "blockquote" },
+        "spans": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/inlineSpan" }
+        }
+      }
+    },
+    "hr": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "hr" }
+      }
+    },
+    "image": {
+      "type": "object",
+      "required": ["type", "src"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "image" },
+        "src": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Image URL or relative path."
+        },
+        "alt": {
+          "type": "string",
+          "description": "Alternative text shown when the image cannot be rendered."
+        }
+      }
+    }
+  }
+}
