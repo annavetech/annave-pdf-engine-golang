@@ -8,6 +8,13 @@ on:
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
+
+    # The default workflow token is read-only, which makes creating the
+    # release itself fail with 403. Only contents needs elevating; pushing
+    # the cask to the tap repository uses HOMEBREW_TAP_TOKEN instead.
+    permissions:
+      contents: write
+
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
