@@ -5,6 +5,20 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [Unreleased]
+
+### Added
+- `internal/api` test suite: full middleware chain (rate limiting, auth, CORS, size limits, security headers, request ID, logging), the `convert` handler's multipart/urlencoded/raw input paths, and error-stage to HTTP status mapping, including a concurrent rate-limit test run under `-race`. The package had no tests at all; coverage went from 0% to 91.4%.
+
+### Fixed
+- Rate limiter: the per-IP client map gained an entry on every source address seen and never removed one, so traffic from many rotated addresses grew it without bound. A sweeper now drops entries whose newest request has aged out of the window, and the limiter's state moves into an unexported type so the sweep can be tested directly.
+
+### Documentation
+- Rate limiting, DOCX image extraction, the cobra CLI, inline style spans, and `slog.Warn` logging on render failures were all shipped but still described in the docs as planned. Corrected `README.md`, `docs/ARCHITECTURE.md`, `docs/CONFIGURATION.md`, `docs/CONTRIBUTING.md`, `docs/DEPENDENCIES.md`, `docs/ERROR_CODES.md`, `docs/INTEGRATION.md`, `docs/USE_CASES.md`, and `docs/WHITEPAPER.md` to match the code, fixed a clone URL in the contributing guide that pointed at a repository that does not exist, and reconciled the dependency list with `go.mod`.
+- Removed per-document style overrides, the CLI, and rate limiting from the whitepaper's future-directions list — all three are already implemented and documented elsewhere, and the rate-limiting bullet was worded in the present tense, which was incoherent under a "Future directions" heading. Inline rich text rendering and streaming output remain listed; they genuinely aren't implemented yet.
+
+---
+
 ## [1.0.4] — 2026-05-07
 
 ### Fixed
@@ -12,7 +26,6 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ### Added
 - Pipeline tests covering all text formats (HTML, JSON, CSV, YAML, XML, RST, TXT) and PNG image input to guard against regressions.
-- `internal/api` test suite: full middleware chain (rate limiting, auth, CORS, size limits, security headers, request ID, logging), the `convert` handler's multipart/urlencoded/raw input paths, and error-stage to HTTP status mapping, including a concurrent rate-limit test run under `-race`.
 
 ---
 
