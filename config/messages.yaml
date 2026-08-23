@@ -23,7 +23,7 @@ errors:
   ENGINE_ERR_TOO_MANY_PAGES:     "Document produced {page_count} pages; the maximum is {max_pages}. Reduce the document size or increase max_pages in config/limits.yaml."
   ENGINE_ERR_RENDERER_INIT:      "PDF renderer could not be initialised: {detail}"
   ENGINE_ERR_RENDER_FAILED:      "PDF rendering failed: {detail}"
-  ENGINE_ERR_INTERNAL:           "An internal error occurred. Please report this at https://github.com/annavetech/annave-pdf-engine-golang-golang/issues"
+  ENGINE_ERR_INTERNAL:           "An internal error occurred. Please report this at https://github.com/annavetech/annave-pdf-engine-golang/issues"
   ENGINE_ERR_UNAUTHORIZED:       "Missing or invalid internal token."
   ENGINE_ERR_RATE_LIMITED:       "Too many requests. Retry after {retry_after} seconds."
 

@@ -14,8 +14,8 @@ updated:     2026-08-23
 ## Setup
 
 ```bash
-git clone https://github.com/annavetechhq/604-annave-pdf-engine-oss-api-dev.git
-cd 604-annave-pdf-engine-oss-api-dev
+git clone https://github.com/annavetech/annave-pdf-engine-golang.git
+cd annave-pdf-engine-golang
 
 # Build
 go build ./cmd/server
