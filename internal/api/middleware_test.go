@@ -7,6 +7,7 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -340,6 +341,27 @@ func TestWithRateLimit_WindowExpiryRestoresAllowance(t *testing.T) {
 	mw.ServeHTTP(rec3, rateLimitedRequest(ip))
 	if rec3.Code != http.StatusOK {
 		t.Errorf("request after window expiry: status = %d, want %d", rec3.Code, http.StatusOK)
+	}
+}
+
+// TestRateLimiter_SweepPrunesStaleEntries registers 10,000 distinct IPs with
+// timestamps already outside the one-minute window, calls sweep directly,
+// and asserts every entry was removed. This is Fix 1 from the remediation
+// spec: without the sweeper, the client map grows without bound.
+func TestRateLimiter_SweepPrunesStaleEntries(t *testing.T) {
+	rl := &rateLimiter{clients: map[string]*rateEntry{}}
+	stale := time.Now().Add(-2 * time.Minute)
+
+	const ips = 10000
+	for i := 0; i < ips; i++ {
+		ip := fmt.Sprintf("198.51.100.%d:%d", i%256, i)
+		rl.clients[ip] = &rateEntry{timestamps: []time.Time{stale}}
+	}
+
+	rl.sweep()
+
+	if len(rl.clients) != 0 {
+		t.Errorf("clients after sweep = %d, want 0", len(rl.clients))
 	}
 }
 

@@ -112,6 +112,40 @@ func WithInternalToken(secret string) func(http.Handler) http.Handler {
 	}
 }
 
+// rateEntry holds the recent request timestamps for one client IP.
+type rateEntry struct {
+	mu         sync.Mutex
+	timestamps []time.Time
+}
+
+// rateLimiter holds the per-IP state for WithRateLimit and prunes entries
+// that have gone idle past the rate-limit window, so that traffic from many
+// distinct or rotated addresses cannot grow the map without bound.
+type rateLimiter struct {
+	mu      sync.Mutex
+	clients map[string]*rateEntry
+}
+
+// sweep deletes entries whose newest timestamp has fallen outside the
+// one-minute rate-limit window, or that have no timestamps at all.
+//
+// Lock ordering must match the request path exactly: the outer mu is taken
+// before touching clients, and each entry's own mu only after that. Taking
+// them in the reverse order here would deadlock against a request in flight.
+func (rl *rateLimiter) sweep() {
+	cutoff := time.Now().Add(-time.Minute)
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+	for ip, e := range rl.clients {
+		e.mu.Lock()
+		stale := len(e.timestamps) == 0 || e.timestamps[len(e.timestamps)-1].Before(cutoff)
+		e.mu.Unlock()
+		if stale {
+			delete(rl.clients, ip)
+		}
+	}
+}
+
 // WithRateLimit enforces a per-IP sliding-window rate limit.
 // n is the maximum number of requests allowed per minute per IP.
 // If n is 0 or negative, the middleware is a no-op.
@@ -120,14 +154,14 @@ func WithRateLimit(n int) func(http.Handler) http.Handler {
 		return func(next http.Handler) http.Handler { return next }
 	}
 
-	type entry struct {
-		mu         sync.Mutex
-		timestamps []time.Time
-	}
-	var (
-		mu      sync.Mutex
-		clients = map[string]*entry{}
-	)
+	rl := &rateLimiter{clients: map[string]*rateEntry{}}
+	go func() {
+		t := time.NewTicker(time.Minute)
+		defer t.Stop()
+		for range t.C {
+			rl.sweep()
+		}
+	}()
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -136,13 +170,13 @@ func WithRateLimit(n int) func(http.Handler) http.Handler {
 				ip = r.RemoteAddr
 			}
 
-			mu.Lock()
-			e, ok := clients[ip]
+			rl.mu.Lock()
+			e, ok := rl.clients[ip]
 			if !ok {
-				e = &entry{}
-				clients[ip] = e
+				e = &rateEntry{}
+				rl.clients[ip] = e
 			}
-			mu.Unlock()
+			rl.mu.Unlock()
 
 			now := time.Now()
 			window := now.Add(-time.Minute)
