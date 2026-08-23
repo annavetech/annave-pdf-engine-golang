@@ -17,10 +17,35 @@ var (
 	mdTableRow      = regexp.MustCompile(`^\|.+\|$`)
 	mdTableSep      = regexp.MustCompile(`^\|[-: |]+\|$`)
 	mdATXHeading    = regexp.MustCompile(`^(#{1,6})\s+(.+?)(?:\s+#+\s*)?$`)
+	// mdFence is an interpreted string, not a backtick raw literal, because
+	// the pattern itself must match a backtick fence character.
 	mdFence         = regexp.MustCompile("^(`{3,}|~{3,})\\s*(\\S*)\\s*$")
 	mdThematicBreak = regexp.MustCompile(`^(\s*[-*_]){3,}\s*$`)
 	mdImage         = regexp.MustCompile(`^!\[([^\]]*)\]\(([^)]+)\)\s*$`)
 	mdHasHeading    = regexp.MustCompile(`(?m)^#{1,}\s`)
+	mdQuotePrefix   = regexp.MustCompile(`^>\s?`)
+
+	// ParseInline delimiter patterns.
+	boldItalicRe  = regexp.MustCompile(`^(\*{3})([\s\S]*?)\*{3}`)
+	boldItalicRe2 = regexp.MustCompile(`^(_{3})([\s\S]*?)_{3}`)
+	boldRe        = regexp.MustCompile(`^(\*{2})([\s\S]*?)\*{2}`)
+	boldRe2       = regexp.MustCompile(`^(_{2})([\s\S]*?)_{2}`)
+	italicRe      = regexp.MustCompile(`^\*([\s\S]*?)\*`)
+	italicRe2     = regexp.MustCompile(`^_([\s\S]*?)_`)
+	codeRe        = regexp.MustCompile("^`([^`]+)`")
+	strikeRe      = regexp.MustCompile(`^~~([\s\S]*?)~~`)
+	linkRe        = regexp.MustCompile(`^\[([^\]]+)\]\(([^)]+)\)`)
+
+	// stripInline delimiter patterns.
+	stripBoldItalic      = regexp.MustCompile(`\*{3}([^*]+)\*{3}`)
+	stripBold            = regexp.MustCompile(`\*{2}([^*]+)\*{2}`)
+	stripItalic          = regexp.MustCompile(`\*([^*]+)\*`)
+	stripUnderBoldItalic = regexp.MustCompile(`_{3}([^_]+)_{3}`)
+	stripUnderBold       = regexp.MustCompile(`_{2}([^_]+)_{2}`)
+	stripUnder           = regexp.MustCompile(`_([^_]+)_`)
+	stripCode            = regexp.MustCompile("`([^`]+)`")
+	stripStrike          = regexp.MustCompile(`~~([^~]+)~~`)
+	stripLink            = regexp.MustCompile(`\[([^\]]+)\]\([^)]+\)`)
 )
 
 type MdParser struct{}
@@ -81,7 +106,7 @@ func (p *MdParser) Parse(input string) (*ast.DocumentNode, error) {
 		if strings.HasPrefix(trimmed, ">") {
 			var quoteLines []string
 			for i < len(lines) && strings.HasPrefix(strings.TrimSpace(lines[i]), ">") {
-				stripped := regexp.MustCompile(`^>\s?`).ReplaceAllString(strings.TrimSpace(lines[i]), "")
+				stripped := mdQuotePrefix.ReplaceAllString(strings.TrimSpace(lines[i]), "")
 				quoteLines = append(quoteLines, stripped)
 				i++
 			}
@@ -230,16 +255,6 @@ func ParseInline(raw string) []ast.InlineSpan {
 	var spans []ast.InlineSpan
 	s := raw
 
-	boldItalicRe := regexp.MustCompile(`^(\*{3})([\s\S]*?)\*{3}`)
-	boldItalicRe2 := regexp.MustCompile(`^(_{3})([\s\S]*?)_{3}`)
-	boldRe := regexp.MustCompile(`^(\*{2})([\s\S]*?)\*{2}`)
-	boldRe2 := regexp.MustCompile(`^(_{2})([\s\S]*?)_{2}`)
-	italicRe := regexp.MustCompile(`^\*([\s\S]*?)\*`)
-	italicRe2 := regexp.MustCompile(`^_([\s\S]*?)_`)
-	codeRe := regexp.MustCompile("^`([^`]+)`")
-	strikeRe := regexp.MustCompile(`^~~([\s\S]*?)~~`)
-	linkRe := regexp.MustCompile(`^\[([^\]]+)\]\(([^)]+)\)`)
-
 	appendText := func(t string) {
 		if len(spans) > 0 && spans[len(spans)-1].Kind == ast.SpanText {
 			spans[len(spans)-1].Text += t
@@ -316,14 +331,14 @@ func ParseInline(raw string) []ast.InlineSpan {
 
 func stripInline(s string) string {
 	res := s
-	res = regexp.MustCompile(`\*{3}([^*]+)\*{3}`).ReplaceAllString(res, "$1")
-	res = regexp.MustCompile(`\*{2}([^*]+)\*{2}`).ReplaceAllString(res, "$1")
-	res = regexp.MustCompile(`\*([^*]+)\*`).ReplaceAllString(res, "$1")
-	res = regexp.MustCompile(`_{3}([^_]+)_{3}`).ReplaceAllString(res, "$1")
-	res = regexp.MustCompile(`_{2}([^_]+)_{2}`).ReplaceAllString(res, "$1")
-	res = regexp.MustCompile(`_([^_]+)_`).ReplaceAllString(res, "$1")
-	res = regexp.MustCompile("`([^`]+)`").ReplaceAllString(res, "$1")
-	res = regexp.MustCompile(`~~([^~]+)~~`).ReplaceAllString(res, "$1")
-	res = regexp.MustCompile(`\[([^\]]+)\]\([^)]+\)`).ReplaceAllString(res, "$1")
+	res = stripBoldItalic.ReplaceAllString(res, "$1")
+	res = stripBold.ReplaceAllString(res, "$1")
+	res = stripItalic.ReplaceAllString(res, "$1")
+	res = stripUnderBoldItalic.ReplaceAllString(res, "$1")
+	res = stripUnderBold.ReplaceAllString(res, "$1")
+	res = stripUnder.ReplaceAllString(res, "$1")
+	res = stripCode.ReplaceAllString(res, "$1")
+	res = stripStrike.ReplaceAllString(res, "$1")
+	res = stripLink.ReplaceAllString(res, "$1")
 	return res
 }

@@ -13,6 +13,25 @@ import (
 
 var adornmentChars = map[byte]bool{'=': true, '-': true, '~': true, '^': true, '"': true, '\'': true, '#': true, '*': true, '+': true, '_': true}
 
+var (
+	rstHR        = regexp.MustCompile(`^-{4,}$`)
+	rstDirective = regexp.MustCompile(`^\.\.\s+\S`)
+	rstFieldList = regexp.MustCompile(`^:[^:]+:`)
+	rstBullet    = regexp.MustCompile(`^[-*+]\s`)
+	rstOrdered   = regexp.MustCompile(`^\d+[.)]\s`)
+
+	// rstBulletPrefix and rstOrderedPrefix require one or more spaces after
+	// the marker (unlike rstBullet/rstOrdered above, which only detect the
+	// marker) because they also strip the prefix via ReplaceAllString.
+	rstBulletPrefix  = regexp.MustCompile(`^[-*+]\s+`)
+	rstOrderedPrefix = regexp.MustCompile(`^\d+[.)]\s+`)
+
+	rstFieldPattern        = regexp.MustCompile(`^:([^:]+):\s*(.*)`)
+	rstCodeDirective       = regexp.MustCompile(`^\.\.\s+code(?:-block)?::\s*(\w*)`)
+	rstAdmonitionDirective = regexp.MustCompile(`^\.\.\s+(\w+)::\s*(.*)`)
+	rstDoubleBacktick      = regexp.MustCompile("``([^`]+)``")
+)
+
 type RstParser struct{}
 
 func (p *RstParser) CanParse(input string) bool {
@@ -51,7 +70,7 @@ func (p *RstParser) Parse(input string) (*ast.DocumentNode, error) {
 		}
 
 		// HR: 4+ dashes alone
-		if regexp.MustCompile(`^-{4,}$`).MatchString(trimmed) && !isAdornmentForTitle(lines, i) {
+		if rstHR.MatchString(trimmed) && !isAdornmentForTitle(lines, i) {
 			children = append(children, ast.Node{Type: ast.TypeHR})
 			i++
 			continue
@@ -65,7 +84,7 @@ func (p *RstParser) Parse(input string) (*ast.DocumentNode, error) {
 		}
 
 		// Directive .. something::
-		if regexp.MustCompile(`^\.\.\s+\S`).MatchString(trimmed) {
+		if rstDirective.MatchString(trimmed) {
 			node, next := parseRSTDirective(lines, i)
 			if node != nil {
 				children = append(children, *node)
@@ -85,7 +104,7 @@ func (p *RstParser) Parse(input string) (*ast.DocumentNode, error) {
 		}
 
 		// Field list :key: value
-		if regexp.MustCompile(`^:[^:]+:`).MatchString(trimmed) {
+		if rstFieldList.MatchString(trimmed) {
 			node, next := parseRSTFieldList(lines, i)
 			if node != nil {
 				children = append(children, *node)
@@ -95,7 +114,7 @@ func (p *RstParser) Parse(input string) (*ast.DocumentNode, error) {
 		}
 
 		// Bullet list
-		if regexp.MustCompile(`^[-*+]\s`).MatchString(trimmed) {
+		if rstBullet.MatchString(trimmed) {
 			node, next := parseRSTList(lines, i, false)
 			children = append(children, node)
 			i = next
@@ -103,7 +122,7 @@ func (p *RstParser) Parse(input string) (*ast.DocumentNode, error) {
 		}
 
 		// Ordered list
-		if regexp.MustCompile(`^\d+[.)]\s`).MatchString(trimmed) {
+		if rstOrdered.MatchString(trimmed) {
 			node, next := parseRSTList(lines, i, true)
 			children = append(children, node)
 			i = next
@@ -156,9 +175,9 @@ func detectRSTHeading(lines []string, i int, nextLevel func(byte) int) (*ast.Nod
 }
 
 func parseRSTList(lines []string, start int, ordered bool) (ast.Node, int) {
-	prefixRe := regexp.MustCompile(`^[-*+]\s+`)
+	prefixRe := rstBulletPrefix
 	if ordered {
-		prefixRe = regexp.MustCompile(`^\d+[.)]\s+`)
+		prefixRe = rstOrderedPrefix
 	}
 	var items []string
 	i := start
@@ -186,7 +205,7 @@ func parseRSTList(lines []string, start int, ordered bool) (ast.Node, int) {
 }
 
 func parseRSTFieldList(lines []string, start int) (*ast.Node, int) {
-	fieldRe := regexp.MustCompile(`^:([^:]+):\s*(.*)`)
+	fieldRe := rstFieldPattern
 	var rows [][]string
 	i := start
 	for i < len(lines) {
@@ -250,11 +269,11 @@ func parseRSTLiteralBlock(lines []string, start int, lang string) (*ast.Node, in
 
 func parseRSTDirective(lines []string, start int) (*ast.Node, int) {
 	line := strings.TrimSpace(lines[start])
-	codeMatch := regexp.MustCompile(`^\.\.\s+code(?:-block)?::\s*(\w*)`).FindStringSubmatch(line)
+	codeMatch := rstCodeDirective.FindStringSubmatch(line)
 	if codeMatch != nil {
 		return parseRSTLiteralBlock(lines, start+1, codeMatch[1])
 	}
-	admonition := regexp.MustCompile(`^\.\.\s+(\w+)::\s*(.*)`).FindStringSubmatch(line)
+	admonition := rstAdmonitionDirective.FindStringSubmatch(line)
 	if admonition != nil {
 		label := admonition[1]
 		body := strings.TrimSpace(admonition[2])
@@ -316,10 +335,10 @@ func parseRSTPararaph(lines []string, start int) (*ast.Node, int) {
 			i++
 			break
 		}
-		if isAdornLine(t) || regexp.MustCompile(`^[-*+]\s`).MatchString(t) ||
-			regexp.MustCompile(`^\d+[.)]\s`).MatchString(t) ||
-			regexp.MustCompile(`^:[^:]+:`).MatchString(t) ||
-			regexp.MustCompile(`^\.\.\s+\S`).MatchString(t) {
+		if isAdornLine(t) || rstBullet.MatchString(t) ||
+			rstOrdered.MatchString(t) ||
+			rstFieldList.MatchString(t) ||
+			rstDirective.MatchString(t) {
 			break
 		}
 		if i+1 < len(lines) && isAdornLine(strings.TrimSpace(lines[i+1])) {
@@ -342,7 +361,7 @@ func parseRSTPararaph(lines []string, start int) (*ast.Node, int) {
 }
 
 func rstInline(text string) []ast.InlineSpan {
-	converted := regexp.MustCompile("``([^`]+)``").ReplaceAllString(text, "`$1`")
+	converted := rstDoubleBacktick.ReplaceAllString(text, "`$1`")
 	return ParseInline(converted)
 }
 

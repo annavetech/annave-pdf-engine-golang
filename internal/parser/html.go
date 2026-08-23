@@ -12,7 +12,10 @@ import (
 	"golang.org/x/net/html"
 )
 
-var htmlTagRe = regexp.MustCompile(`(?i)<[a-z][\s\S]*>`)
+var (
+	htmlTagRe     = regexp.MustCompile(`(?i)<[a-z][\s\S]*>`)
+	htmlLangClass = regexp.MustCompile(`language-(\S+)`)
+)
 
 type HtmlParser struct{}
 
@@ -152,7 +155,7 @@ func walkHTMLBlock(n *html.Node, out *[]ast.Node, inBlockquote, inPre bool) {
 			if codeEl != nil {
 				for _, a := range codeEl.Attr {
 					if a.Key == "class" {
-						if m := regexp.MustCompile(`language-(\S+)`).FindStringSubmatch(a.Val); m != nil {
+						if m := htmlLangClass.FindStringSubmatch(a.Val); m != nil {
 							lang = m[1]
 						}
 					}
