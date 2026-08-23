@@ -9,9 +9,14 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ### Added
 - `internal/api` test suite: full middleware chain (rate limiting, auth, CORS, size limits, security headers, request ID, logging), the `convert` handler's multipart/urlencoded/raw input paths, and error-stage to HTTP status mapping, including a concurrent rate-limit test run under `-race`. The package had no tests at all; coverage went from 0% to 91.4%.
+- Golden-PDF regression test: a markdown fixture, a committed reference PDF, and a byte-compare test in `internal/engine` that reports the diverging byte offset when a parser change alters rendered output instead of a bare "not equal". Regenerate the reference file deliberately with `UPDATE_GOLDEN=1`.
 
 ### Fixed
 - Rate limiter: the per-IP client map gained an entry on every source address seen and never removed one, so traffic from many rotated addresses grew it without bound. A sweeper now drops entries whose newest request has aged out of the window, and the limiter's state moves into an unexported type so the sweep can be tested directly.
+- Renderer: `NewRenderer` registered its six fonts by ranging over a Go map, and map iteration order is randomised on every run. gopdf assigns PDF object numbers in font registration order, so the same document could render to different bytes each time it was converted. Fonts are now registered from a fixed, ordered list, so rendering the same document twice now produces byte-identical output — the golden-PDF test above is what proves it.
+
+### Changed
+- Markdown, reStructuredText, and HTML parsing: thirty-five regular expressions were compiled inside function bodies and recompiled on every call, several of them once per line of input. They now compile once at package init instead. Measured: `ParseInline` 6.3× faster with 32.7× less memory, `stripInline` 8.8× faster with 20.6× less memory, and `MdParser.Parse` on a 4,000-item document 8.0× faster, with allocations down from 2,232,765 to 160,042.
 
 ### Documentation
 - Rate limiting, DOCX image extraction, the cobra CLI, inline style spans, and `slog.Warn` logging on render failures were all shipped but still described in the docs as planned. Corrected `README.md`, `docs/ARCHITECTURE.md`, `docs/CONFIGURATION.md`, `docs/CONTRIBUTING.md`, `docs/DEPENDENCIES.md`, `docs/ERROR_CODES.md`, `docs/INTEGRATION.md`, `docs/USE_CASES.md`, and `docs/WHITEPAPER.md` to match the code, fixed a clone URL in the contributing guide that pointed at a repository that does not exist, and reconciled the dependency list with `go.mod`.
