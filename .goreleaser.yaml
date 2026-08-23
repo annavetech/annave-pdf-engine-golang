@@ -1,4 +1,4 @@
-# ANNAVE PDF Engine — release pipeline
+# ANNÁVE PDF Engine — release pipeline
 #
 # Builds the `annave` CLI (cmd/cli) for darwin and linux, amd64 and arm64,
 # publishes a GitHub release with checksums, and pushes an updated Homebrew
@@ -59,7 +59,7 @@ homebrew_casks:
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
     directory: Casks
     homepage: "https://www.annave.tech"
-    description: "Convert documents to PDF from the command line — ANNAVE PDF Engine"
+    description: "Convert documents to PDF from the command line — ANNÁVE PDF Engine"
     hooks:
       post:
         install: |

@@ -1,5 +1,5 @@
 <!--
-title:       ANNAVE PDF Engine — Architecture
+title:       ANNÁVE PDF Engine — Architecture
 description: Hexagonal architecture overview, six-stage pipeline, port interfaces,
              package structure, and instructions for adding a new parser.
 author:      Anna Veretennykova
@@ -219,7 +219,7 @@ const FormatYour InputFormat = "your"
 FormatYour: &YourParser{},
 ```
 
-3. **Add a test in `internal/parser/yourformat_test.go`** using a real fixture from the ANNAVE PDF Engine documentation as input.
+3. **Add a test in `internal/parser/yourformat_test.go`** using a real fixture from the ANNÁVE PDF Engine documentation as input.
 
 4. **Update `config/messages.yaml`** to include the new format in the `ENGINE_ERR_UNSUPPORTED_FORMAT` message list.
 

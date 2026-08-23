@@ -1,4 +1,4 @@
-# ANNAVE PDF Engine
+# ANNÁVE PDF Engine
 
 Convert any document format to PDF with a single API call. No headless browser. No C dependencies. Self-hosted.
 
@@ -18,7 +18,7 @@ Every available option has a cost that isn't obvious until production:
 | PDFco / HTML2PDF / similar | Per-call pricing, your documents leave your infrastructure |
 | ReportLab (Python) | Python runtime required, not embeddable in Go services |
 
-ANNAVE PDF Engine is a single Go binary (~10 MB with embedded fonts). It takes raw text or structured JSON as input and returns PDF bytes. No runtime dependencies. No external calls. Deploy it once and it runs indefinitely.
+ANNÁVE PDF Engine is a single Go binary (~10 MB with embedded fonts). It takes raw text or structured JSON as input and returns PDF bytes. No runtime dependencies. No external calls. Deploy it once and it runs indefinitely.
 
 ---
 

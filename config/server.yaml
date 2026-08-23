@@ -1,4 +1,4 @@
-# ANNAVE PDF Engine — Server Configuration
+# ANNÁVE PDF Engine — Server Configuration
 #
 # These values control the HTTP server, CORS policy, and optional features.
 # Environment variables override values in this file where noted.

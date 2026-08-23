@@ -26,7 +26,7 @@ func TestConvert_AllFormats(t *testing.T) {
 		input string
 		f     pdfengine.Format
 	}{
-		{"markdown", "# ANNAVE PDF Engine\n\nConverts documents to PDF.", pdfengine.FormatMarkdown},
+		{"markdown", "# ANNÁVE PDF Engine\n\nConverts documents to PDF.", pdfengine.FormatMarkdown},
 		{"text", "This is a plain text report.\n\nIt has two paragraphs.", pdfengine.FormatText},
 		{"json", `{"type":"document","children":[{"type":"heading","level":1,"text":"Report"}]}`, pdfengine.FormatJSON},
 		{"html", "<h1>Report</h1><p>A paragraph.</p>", pdfengine.FormatHTML},

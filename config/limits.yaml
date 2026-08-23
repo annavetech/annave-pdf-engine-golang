@@ -1,4 +1,4 @@
-# ANNAVE PDF Engine — Input and Output Limits
+# ANNÁVE PDF Engine — Input and Output Limits
 #
 # Adjust these values to match your deployment constraints.
 # All limits are enforced at runtime; no rebuild required after changes.

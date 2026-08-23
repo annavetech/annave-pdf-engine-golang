@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to ANNAVE PDF Engine are documented here.
+All notable changes to ANNÁVE PDF Engine are documented here.
 Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---

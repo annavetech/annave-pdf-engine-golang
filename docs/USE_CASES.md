@@ -1,5 +1,5 @@
 <!--
-title:       ANNAVE PDF Engine — Use Cases
+title:       ANNÁVE PDF Engine — Use Cases
 description: Eight practical use cases with real request and response examples.
              No marketing language — just what works and what to watch for.
 author:      Anna Veretennykova

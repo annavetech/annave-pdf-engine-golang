@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Package port defines the primary and secondary port interfaces for the
-// ANNAVE PDF Engine's hexagonal architecture.
+// ANNÁVE PDF Engine's hexagonal architecture.
 //
 // Hexagonal architecture separates the domain core from the outside world
 // through explicit ports. The engine is the domain core; everything else

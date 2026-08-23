@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://www.annave.tech/pdf-engine/schema/error.v1",
-  "title": "ANNAVE PDF Engine — Error Response",
+  "title": "ANNÁVE PDF Engine — Error Response",
   "description": "JSON body returned on any 4xx or 5xx response from the convert endpoint.",
   "type": "object",
   "required": ["error"],

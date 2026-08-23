@@ -1,7 +1,7 @@
 <!--
-title:       ANNAVE PDF Engine — Technical White Paper
+title:       ANNÁVE PDF Engine — Technical White Paper
 description: The problem, the design decisions, the tradeoffs, and the
-             performance characteristics of the ANNAVE PDF Engine v1.0.
+             performance characteristics of the ANNÁVE PDF Engine v1.0.
 author:      Anna Veretennykova
 website:     www.annave.tech
 version:     1.1.0

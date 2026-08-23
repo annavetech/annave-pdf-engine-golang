@@ -93,7 +93,7 @@ Examples:
 		api.NewHandler(token, corsOrigin, cfg.RateLimit.RequestsPerMinute).Register(mux)
 
 		addr := fmt.Sprintf(":%d", port)
-		log.Printf("ANNAVE PDF Engine v%s listening on %s", engine.EngineVersion, addr)
+		log.Printf("ANNÁVE PDF Engine v%s listening on %s", engine.EngineVersion, addr)
 		return http.ListenAndServe(addr, mux) //nolint:gosec // adding server timeouts would be a behavior change outside the scope of this lint-compliance pass; flagged for Anna's follow-up
 	},
 }

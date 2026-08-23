@@ -15,15 +15,15 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:   "annave",
-	Short: "ANNAVE developer tools",
-	Long:  "ANNAVE — developer tools by Anna Veretennykova (www.annave.tech)",
+	Short: "ANNÁVE TECH developer tools",
+	Long:  "ANNÁVE TECH — developer tools by Anna Veretennykova (www.annave.tech)",
 }
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print the version",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("ANNAVE PDF Engine v%s\n", engine.EngineVersion)
+		fmt.Printf("ANNÁVE PDF Engine v%s\n", engine.EngineVersion)
 	},
 }
 
