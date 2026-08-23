@@ -50,6 +50,26 @@ go test -fuzz=FuzzMdParser -fuzztime=30s ./internal/parser/...
 go test -race ./...
 ```
 
+### Golden-PDF regression test
+
+`internal/engine/golden_test.go` renders `internal/engine/testdata/golden.md`
+and byte-compares the result against the committed
+`internal/engine/testdata/golden.pdf`. This is what proves a refactor left
+rendered output unchanged — a pure change (regex hoisting, loop restructuring)
+must produce identical bytes; if it does not, something was transcribed
+wrongly.
+
+If a change is meant to alter rendered output, regenerate the golden file
+and commit it deliberately:
+
+```bash
+UPDATE_GOLDEN=1 go test ./internal/engine/ -run TestPipeline_Run_GoldenPDFMatchesFixture
+git diff --stat internal/engine/testdata/golden.pdf   # confirm the change is expected
+```
+
+The `UPDATE_GOLDEN` env var guard means this never happens as a side effect
+of a normal `go test ./...`.
+
 ---
 
 ## Code style
