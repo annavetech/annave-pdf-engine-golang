@@ -126,10 +126,4 @@ The engine is designed to be deployed as an internal service, not a public endpo
 
 - **Inline rich text rendering:** The layout engine already computes per-token style information (`MeasuredToken` in `layout.go`). The renderer reads this but currently applies only the block-level style. Rendering bold, italic, and code spans inline requires tracking horizontal position across tokens and switching gopdf font state mid-line.
 
-- **Per-document style overrides:** Accept a JSON style override in the request body or a query parameter, merged with `config/style.yaml` at the pipeline level. Useful for white-labelling.
-
-- **CLI:** A `cmd/cli` package using `cobra` that calls the pipeline directly (no HTTP) for local use. See `docs/CONTRIBUTING.md`.
-
 - **Streaming output:** Write each PDF page to the response as it is rendered, reducing time-to-first-byte for long documents. Requires gopdf support for incremental page writing.
-
-- **Rate limiting:** The `config/server.yaml` key `rate_limit.requests_per_minute` is enforced in the middleware chain using a per-IP sliding window.
