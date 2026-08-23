@@ -13,6 +13,7 @@ jobs:
   go:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         # go.mod declares the minimum supported Go version (1.25); this leg
         # verifies that compatibility promise against downstream importers.
