@@ -15,7 +15,7 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ### Documentation
 - Rate limiting, DOCX image extraction, the cobra CLI, inline style spans, and `slog.Warn` logging on render failures were all shipped but still described in the docs as planned. Corrected `README.md`, `docs/ARCHITECTURE.md`, `docs/CONFIGURATION.md`, `docs/CONTRIBUTING.md`, `docs/DEPENDENCIES.md`, `docs/ERROR_CODES.md`, `docs/INTEGRATION.md`, `docs/USE_CASES.md`, and `docs/WHITEPAPER.md` to match the code, fixed a clone URL in the contributing guide that pointed at a repository that does not exist, and reconciled the dependency list with `go.mod`.
-- Removed per-document style overrides, the CLI, and rate limiting from the whitepaper's future-directions list — all three are already implemented and documented elsewhere, and the rate-limiting bullet was worded in the present tense, which was incoherent under a "Future directions" heading. Inline rich text rendering and streaming output remain listed; they genuinely aren't implemented yet.
+- Removed per-document style overrides, the CLI, and rate limiting from the whitepaper's future-directions list — all three are already implemented and documented elsewhere, and the rate-limiting bullet was worded in the present tense, which was incoherent under a "Future directions" heading. Streaming output remains listed because it genuinely isn't implemented. Inline rich text rendering stays listed too, but narrower than before: headings and paragraphs already switch fonts mid-line for bold, italic, and code spans, and what's left is wiring the same span data through for lists and blockquotes and adding it to tables.
 
 ---
 

@@ -124,6 +124,6 @@ The engine is designed to be deployed as an internal service, not a public endpo
 
 ## Future directions
 
-- **Inline rich text rendering:** The layout engine already computes per-token style information (`MeasuredToken` in `layout.go`). The renderer reads this but currently applies only the block-level style. Rendering bold, italic, and code spans inline requires tracking horizontal position across tokens and switching gopdf font state mid-line.
+- **Inline rich text rendering:** The layout engine computes per-token style information (`MeasuredToken` in `layout.go`), and the renderer tracks horizontal position across tokens and switches gopdf font state mid-line to render bold, italic, and code spans inline — but only for headings and paragraphs. List items and blockquote text carry the same span data through layout, then get flattened to a single font before rendering; tables have no per-cell span data in the AST to begin with. Extending inline rendering to lists and blockquotes, and adding span support to table cells, is what remains.
 
 - **Streaming output:** Write each PDF page to the response as it is rendered, reducing time-to-first-byte for long documents. Requires gopdf support for incremental page writing.
