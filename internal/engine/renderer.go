@@ -43,16 +43,20 @@ func NewRenderer() (*Renderer, error) {
 		Unit:     gopdf.Unit_MM,
 	})
 
-	fonts := map[string]string{
-		fnInterRegular:   "fonts/Inter-Regular.ttf",
-		fnInterItalic:    "fonts/Inter-Italic.ttf",
-		fnInterSemiBold:  "fonts/Inter-SemiBold.ttf",
-		fnInterBold:      "fonts/Inter-Bold.ttf",
-		fnInterExtraBold: "fonts/Inter-ExtraBold.ttf",
-		fnMono:           "fonts/JetBrainsMono-Regular.ttf",
+	// gopdf assigns PDF object numbers in font registration order, so this
+	// order must be fixed rather than ranged over a map — otherwise the
+	// same document renders to different bytes on every run.
+	fonts := []struct{ name, path string }{
+		{fnInterRegular, "fonts/Inter-Regular.ttf"},
+		{fnInterItalic, "fonts/Inter-Italic.ttf"},
+		{fnInterSemiBold, "fonts/Inter-SemiBold.ttf"},
+		{fnInterBold, "fonts/Inter-Bold.ttf"},
+		{fnInterExtraBold, "fonts/Inter-ExtraBold.ttf"},
+		{fnMono, "fonts/JetBrainsMono-Regular.ttf"},
 	}
 
-	for name, path := range fonts {
+	for _, f := range fonts {
+		name, path := f.name, f.path
 		data, err := fs.ReadFile(fontsFS, path)
 		if err != nil {
 			return nil, fmt.Errorf("renderer: load font %s: %w", name, err)
