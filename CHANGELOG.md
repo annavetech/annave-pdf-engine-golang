@@ -5,6 +5,13 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.1.0] — 2026-08-23
+
+### Added
+- Public Go API at the module root, package `pdfengine`. Every package that did real work lived under `internal/`, so the engine had no importable surface at all outside its own binaries. `pdfengine.New().Convert(text, pdfengine.FormatMarkdown)` delegates inward to the same pipeline the server and CLI use, with its own `Format`, `Style`, `Option` and `Error` types — nothing from `internal/engine` or `internal/parser` is re-exported, so internal changes never force a breaking change on library callers.
+
+---
+
 ## [1.0.5] — 2026-08-23
 
 ### Added

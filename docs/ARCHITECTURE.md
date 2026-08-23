@@ -4,7 +4,7 @@ description: Hexagonal architecture overview, six-stage pipeline, port interface
              package structure, and instructions for adding a new parser.
 author:      Anna Veretennykova
 website:     www.annave.tech
-version:     1.0.5
+version:     1.1.0
 created:     2026-05-06
 updated:     2026-08-23
 -->
