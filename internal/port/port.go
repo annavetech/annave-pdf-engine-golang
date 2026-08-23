@@ -20,7 +20,7 @@
 // only implementing DocumentParser.
 package port
 
-import "annave.tech/pdf-engine/internal/ast"
+import "github.com/annavetech/annave-pdf-engine-golang/internal/ast"
 
 // Converter is the primary application port. Any delivery adapter — HTTP
 // handler, gRPC server, CLI command — drives the engine through this interface.

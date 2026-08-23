@@ -7,7 +7,7 @@ package parser
 import (
 	"testing"
 
-	"annave.tech/pdf-engine/internal/ast"
+	"github.com/annavetech/annave-pdf-engine-golang/internal/ast"
 )
 
 func TestMdParser_CanParse(t *testing.T) {

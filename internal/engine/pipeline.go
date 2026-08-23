@@ -5,8 +5,8 @@
 package engine
 
 import (
-	"annave.tech/pdf-engine/internal/ast"
-	"annave.tech/pdf-engine/internal/parser"
+	"github.com/annavetech/annave-pdf-engine-golang/internal/ast"
+	"github.com/annavetech/annave-pdf-engine-golang/internal/parser"
 )
 
 // Pipeline orchestrates: normalize → sanitize → parse → validate → layout → paginate → render.

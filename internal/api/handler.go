@@ -12,10 +12,10 @@ import (
 	"net/http"
 	"strings"
 
-	"annave.tech/pdf-engine/internal/engine"
-	"annave.tech/pdf-engine/internal/parser"
-	engineschema "annave.tech/pdf-engine/schema"
-	"annave.tech/pdf-engine/ui"
+	"github.com/annavetech/annave-pdf-engine-golang/internal/engine"
+	"github.com/annavetech/annave-pdf-engine-golang/internal/parser"
+	engineschema "github.com/annavetech/annave-pdf-engine-golang/schema"
+	"github.com/annavetech/annave-pdf-engine-golang/ui"
 )
 
 type Handler struct {

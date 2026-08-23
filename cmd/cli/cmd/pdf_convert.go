@@ -14,8 +14,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"annave.tech/pdf-engine/internal/engine"
-	"annave.tech/pdf-engine/internal/parser"
+	"github.com/annavetech/annave-pdf-engine-golang/internal/engine"
+	"github.com/annavetech/annave-pdf-engine-golang/internal/parser"
 )
 
 var (

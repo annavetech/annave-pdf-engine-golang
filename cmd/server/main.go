@@ -11,9 +11,9 @@ import (
 	"net/http"
 	"os"
 
-	engineconfig "annave.tech/pdf-engine/config"
-	"annave.tech/pdf-engine/internal/api"
-	"annave.tech/pdf-engine/internal/engine"
+	engineconfig "github.com/annavetech/annave-pdf-engine-golang/config"
+	"github.com/annavetech/annave-pdf-engine-golang/internal/api"
+	"github.com/annavetech/annave-pdf-engine-golang/internal/engine"
 	"gopkg.in/yaml.v3"
 )
 

@@ -12,7 +12,7 @@ import (
 	"strings"
 	"sync"
 
-	"annave.tech/pdf-engine/internal/ast"
+	"github.com/annavetech/annave-pdf-engine-golang/internal/ast"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/opentype"
 	"golang.org/x/image/math/fixed"

@@ -164,7 +164,7 @@ The AST has no dependencies on other internal packages — it is the shared data
 ## Package map
 
 ```
-annave.tech/pdf-engine/
+github.com/annavetech/annave-pdf-engine-golang/
 ├── cmd/
 │   └── server/          — HTTP server entry point
 ├── config/              — Go package; embeds and exports all YAML bytes
@@ -186,7 +186,7 @@ annave.tech/pdf-engine/
 ```go
 package parser
 
-import "annave.tech/pdf-engine/internal/ast"
+import "github.com/annavetech/annave-pdf-engine-golang/internal/ast"
 
 type YourParser struct{}
 

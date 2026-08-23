@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"annave.tech/pdf-engine/internal/ast"
+	"github.com/annavetech/annave-pdf-engine-golang/internal/ast"
 	"golang.org/x/net/html"
 )
 

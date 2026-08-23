@@ -10,7 +10,7 @@ import (
 	"os"
 	"testing"
 
-	"annave.tech/pdf-engine/internal/parser"
+	"github.com/annavetech/annave-pdf-engine-golang/internal/parser"
 )
 
 // goldenMdPath and goldenPdfPath are the fixture and the committed reference

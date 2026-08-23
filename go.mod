@@ -1,4 +1,4 @@
-module annave.tech/pdf-engine
+module github.com/annavetech/annave-pdf-engine-golang
 
 go 1.23
 

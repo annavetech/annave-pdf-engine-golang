@@ -7,7 +7,7 @@ package parser
 import (
 	"strings"
 
-	"annave.tech/pdf-engine/internal/ast"
+	"github.com/annavetech/annave-pdf-engine-golang/internal/ast"
 )
 
 type InputFormat string

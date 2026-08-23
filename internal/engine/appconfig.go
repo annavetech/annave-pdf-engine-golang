@@ -9,7 +9,7 @@ import (
 	"log"
 	"strings"
 
-	engineconfig "annave.tech/pdf-engine/config"
+	engineconfig "github.com/annavetech/annave-pdf-engine-golang/config"
 	"gopkg.in/yaml.v3"
 )
 

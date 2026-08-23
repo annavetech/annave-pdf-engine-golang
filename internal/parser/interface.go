@@ -4,7 +4,7 @@
 
 package parser
 
-import "annave.tech/pdf-engine/internal/ast"
+import "github.com/annavetech/annave-pdf-engine-golang/internal/ast"
 
 type Parser interface {
 	CanParse(input string) bool

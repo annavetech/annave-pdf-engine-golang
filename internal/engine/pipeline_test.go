@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"annave.tech/pdf-engine/internal/parser"
+	"github.com/annavetech/annave-pdf-engine-golang/internal/parser"
 )
 
 // TestPipeline_Run_GoldenMarkdown verifies that the full pipeline converts

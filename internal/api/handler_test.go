@@ -15,7 +15,7 @@ import (
 	"strings"
 	"testing"
 
-	"annave.tech/pdf-engine/internal/engine"
+	"github.com/annavetech/annave-pdf-engine-golang/internal/engine"
 )
 
 func newTestHandler() *Handler {

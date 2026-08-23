@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"annave.tech/pdf-engine/internal/ast"
+	"github.com/annavetech/annave-pdf-engine-golang/internal/ast"
 )
 
 type IpynbParser struct{}

@@ -7,7 +7,7 @@ package engine
 import (
 	"fmt"
 
-	"annave.tech/pdf-engine/internal/ast"
+	"github.com/annavetech/annave-pdf-engine-golang/internal/ast"
 )
 
 var validBlockTypes = map[string]bool{
