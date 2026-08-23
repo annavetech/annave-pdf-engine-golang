@@ -4,9 +4,9 @@ description: Hexagonal architecture overview, six-stage pipeline, port interface
              package structure, and instructions for adding a new parser.
 author:      Anna Veretennykova
 website:     www.annave.tech
-version:     1.0.0
+version:     1.0.4
 created:     2026-05-06
-updated:     2026-05-06
+updated:     2026-08-23
 -->
 
 # Architecture
@@ -21,7 +21,7 @@ This means the same pipeline can be driven by an HTTP server, a CLI command, a t
 ┌─────────────────────────────────────────────────────────┐
 │  Delivery adapters                                      │
 │  internal/api/   — HTTP handler + middleware chain      │
-│  cmd/cli/        — cobra CLI (planned)                  │
+│  cmd/cli/        — cobra CLI                            │
 └─────────────────────┬───────────────────────────────────┘
                       │ implements port.Converter
                       ▼
@@ -99,7 +99,7 @@ Converts the abstract document tree into a flat list of `LayoutBox` values — c
 Each `LayoutBox` holds:
 - Element type and content
 - Computed height in pixels
-- Text runs with style information (for inline bold/italic, planned)
+- Text runs with style information (for inline bold/italic)
 
 Output: `[]LayoutBox`
 

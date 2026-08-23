@@ -4,9 +4,9 @@ description: Full reference for all ENGINE_ERR_* codes: HTTP status, pipeline st
              when each code is triggered, and how to handle it in client code.
 author:      Anna Veretennykova
 website:     www.annave.tech
-version:     1.0.0
+version:     1.0.4
 created:     2026-05-06
-updated:     2026-05-06
+updated:     2026-08-23
 -->
 
 # Error Codes Reference
@@ -37,7 +37,7 @@ ENGINE_(ERR|OK|WARN)_SLUG
 
 - `ERR` — an error; the request failed and no PDF was produced
 - `OK` — a success event (used in structured logs, not API responses)
-- `WARN` — a warning (reserved for future use; not yet emitted)
+- `WARN` — a warning (emitted in structured logs alongside `OK` and `ERR` events)
 
 The slug is the unique identifier. There are no sequence numbers.
 
@@ -117,7 +117,7 @@ The slug is the unique identifier. There are no sequence numbers.
 
 **Client handling:** Honour the `Retry-After` header. Implement exponential backoff for automated clients.
 
-*Note: rate limiting is configurable in `config/server.yaml` but not yet wired up as of v1.0.0.*
+*Note: rate limiting is configured in `config/server.yaml` and enforced per-IP with a sliding window.*
 
 ---
 

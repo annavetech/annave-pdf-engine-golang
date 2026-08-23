@@ -4,9 +4,9 @@ description: How to add a parser, run tests, submit a pull request,
              and what code style is expected.
 author:      Anna Veretennykova
 website:     www.annave.tech
-version:     1.0.0
+version:     1.0.4
 created:     2026-05-06
-updated:     2026-05-06
+updated:     2026-08-23
 -->
 
 # Contributing
@@ -14,8 +14,8 @@ updated:     2026-05-06
 ## Setup
 
 ```bash
-git clone https://github.com/annavetech/annave-pdf-engine-golang-golang
-cd annave-pdf-engine-golang
+git clone https://github.com/annavetechhq/604-annave-pdf-engine-oss-api-dev.git
+cd 604-annave-pdf-engine-oss-api-dev
 
 # Build
 go build ./cmd/server
@@ -107,7 +107,7 @@ The six stages are fixed at the architectural level. Adding a seventh stage requ
 The engine follows [Semantic Versioning](https://semver.org). The version is set in `internal/engine/config.go`:
 
 ```go
-const EngineVersion = "1.0.0"
+const EngineVersion = "1.0.4"
 ```
 
 - Patch (1.0.x): bug fixes, no API or config key changes

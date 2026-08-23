@@ -89,7 +89,7 @@ Body: { "type": "document", "children": [...] }
 **Success response — 200 OK:**
 ```
 Content-Type: application/pdf
-X-Engine-Version: 1.0.0
+X-Engine-Version: <engine version>
 X-Request-Id: <uuid>
 Body: <PDF bytes>
 ```
@@ -109,7 +109,7 @@ See [`schema/error.v1.schema.json`](schema/error.v1.schema.json) for the full er
 
 ### `GET /health`
 
-Returns `200 OK` with `{"status":"ok","version":"1.0.0"}`. Use this as a readiness probe.
+Returns `200 OK` with `{"status":"ok","version":"<engine version>"}`. Use this as a readiness probe.
 
 ---
 

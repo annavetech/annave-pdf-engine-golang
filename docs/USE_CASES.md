@@ -4,9 +4,9 @@ description: Eight practical use cases with real request and response examples.
              No marketing language — just what works and what to watch for.
 author:      Anna Veretennykova
 website:     www.annave.tech
-version:     1.0.0
+version:     1.0.4
 created:     2026-05-06
-updated:     2026-05-06
+updated:     2026-08-23
 -->
 
 # Use Cases
@@ -88,7 +88,7 @@ From a browser form:
 
 **What to watch:**
 - DOCX support covers: headings (Heading1–Heading6, Title, Subtitle styles), paragraphs, bold/italic/strikethrough runs, ordered and unordered lists (reads `numbering.xml`), tables.
-- Embedded images in DOCX are not yet extracted and rendered. The image placeholder is omitted from the PDF.
+- Embedded images in DOCX are extracted by resolving the relationship ID to the image bytes and rendered in the PDF.
 - Password-protected DOCX files cannot be parsed — `ENGINE_ERR_PARSE_FAILED` is returned.
 - The DOCX parser has no external dependencies — it reads the ZIP/XML structure directly.
 

@@ -48,9 +48,6 @@ rate_limit:
   # Per-IP sliding-window request limit. 0 = rate limiting disabled.
   # When enabled, requests exceeding the limit receive ENGINE_ERR_RATE_LIMITED (HTTP 429).
   #
-  # This is a placeholder for future implementation. Setting a non-zero value
-  # currently has no effect — the rate limiter is not yet wired up.
-  #
   # Common values:
   #   0     (disabled — suitable when an upstream gateway handles rate limiting)
   #   60    (1 request per second per IP — strict)

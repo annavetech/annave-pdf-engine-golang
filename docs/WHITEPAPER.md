@@ -4,9 +4,9 @@ description: The problem, the design decisions, the tradeoffs, and the
              performance characteristics of the ANNAVE PDF Engine v1.0.
 author:      Anna Veretennykova
 website:     www.annave.tech
-version:     1.0.0
+version:     1.0.4
 created:     2026-05-06
-updated:     2026-05-06
+updated:     2026-08-23
 -->
 
 # Technical White Paper
@@ -132,4 +132,4 @@ The engine is designed to be deployed as an internal service, not a public endpo
 
 - **Streaming output:** Write each PDF page to the response as it is rendered, reducing time-to-first-byte for long documents. Requires gopdf support for incremental page writing.
 
-- **Rate limiting:** The `config/server.yaml` key `rate_limit.requests_per_minute` is defined but not yet wired up. Implementation would use a per-IP token bucket in the middleware chain.
+- **Rate limiting:** The `config/server.yaml` key `rate_limit.requests_per_minute` is enforced in the middleware chain using a per-IP sliding window.

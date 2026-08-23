@@ -4,9 +4,9 @@ description: How to call the convert endpoint from Go, Node.js, Python, Swift,
              and Angular — with working code examples for each.
 author:      Anna Veretennykova
 website:     www.annave.tech
-version:     1.0.0
+version:     1.0.4
 created:     2026-05-06
-updated:     2026-05-06
+updated:     2026-08-23
 -->
 
 # Integration Guide
@@ -45,7 +45,7 @@ All examples assume the server is running at `http://localhost:5741`. Replace wi
 
 ### `GET /health`
 
-Returns `{"status": "ok", "version": "1.0.0"}`. No authentication required.
+Returns `{"status": "ok", "version": "<engine version>"}`. No authentication required.
 
 ---
 

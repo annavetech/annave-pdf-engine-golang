@@ -4,9 +4,9 @@ description: Every configuration key across limits.yaml, style.yaml, server.yaml
              and messages.yaml — with valid values, defaults, and what breaks at extremes.
 author:      Anna Veretennykova
 website:     www.annave.tech
-version:     1.0.0
+version:     1.0.4
 created:     2026-05-06
-updated:     2026-05-06
+updated:     2026-08-23
 -->
 
 # Configuration Reference
@@ -195,7 +195,7 @@ Base URL for JSON Schema `$id` fields. Change this if you fork the engine and ho
 |---|---|
 | Default | `0` (disabled) |
 
-Per-IP sliding-window rate limit. 0 disables rate limiting. Not yet wired up in v1.0.0 — use an upstream gateway (Nginx, Vercel Edge, Cloudflare) for rate limiting in production.
+Per-IP sliding-window rate limit. 0 disables rate limiting.
 
 ---
 

@@ -4,9 +4,9 @@ description: Every direct and indirect dependency, exact pinned version,
              what each does, and what breaks if you change the version.
 author:      Anna Veretennykova
 website:     www.annave.tech
-version:     1.0.0
+version:     1.0.4
 created:     2026-05-06
-updated:     2026-05-06
+updated:     2026-08-23
 -->
 
 # Dependencies
@@ -76,6 +76,17 @@ HTML parsing, used by `bluemonday` (indirect requirement). Also provides the `ht
 
 ---
 
+### `github.com/spf13/cobra v1.10.2`
+
+Used directly by `cmd/cli` for the CLI command tree (`pdf`, `pdf convert`, `pdf serve`). The HTTP server (`cmd/server`) and the core engine (`internal/engine`) do not depend on cobra.
+
+| Version range | Result |
+|---|---|
+| Any v1.x | Should work — cobra's command API is stable |
+| v1.10.2 | Confirmed working |
+
+---
+
 ## Indirect dependencies
 
 These are required by direct dependencies but not imported directly by the engine.
@@ -84,8 +95,10 @@ These are required by direct dependencies but not imported directly by the engin
 |---|---|---|
 | `github.com/aymerick/douceur` | v0.2.0 | bluemonday — CSS parsing for sanitisation |
 | `github.com/gorilla/css` | v1.0.1 | douceur — CSS tokeniser |
+| `github.com/inconshreveable/mousetrap` | v1.1.0 | cobra — Windows "don't double-click" detection |
 | `github.com/phpdave11/gofpdi` | v1.0.14-0.20211212211723-1f10f9844311 | gopdf — PDF import |
 | `github.com/pkg/errors` | v0.8.1 | gopdf — error wrapping |
+| `github.com/spf13/pflag` | v1.0.9 | cobra — POSIX/GNU-style flag parsing |
 | `golang.org/x/text` | v0.21.0 | golang.org/x/net — text encoding |
 | `gopkg.in/yaml.v3` | v3.0.1 | engine config loading |
 
