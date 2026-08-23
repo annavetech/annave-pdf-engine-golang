@@ -57,18 +57,21 @@ Direct library use — no HTTP required:
 package main
 
 import (
+    "errors"
     "os"
 
-    "github.com/annavetech/annave-pdf-engine-golang/internal/engine"
-    "github.com/annavetech/annave-pdf-engine-golang/internal/parser"
+    "github.com/annavetech/annave-pdf-engine-golang"
 )
 
 func main() {
-    pipeline := engine.NewPipeline()
-
     markdown := `# Report\n\nFirst paragraph.\n\n## Section\n\nMore text.`
-    pdf, err := pipeline.Run(markdown, parser.FormatMd)
+
+    pdf, err := pdfengine.New().Convert(markdown, pdfengine.FormatMarkdown)
     if err != nil {
+        var pe *pdfengine.Error
+        if errors.As(err, &pe) {
+            // pe.Code is a stable, machine-readable identifier, e.g. "ENGINE_ERR_PARSE_FAILED".
+        }
         panic(err)
     }
 
