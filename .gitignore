@@ -1,4 +1,4 @@
-# 604-annave-pdf-engine-oss-api-dev — ANNÁVE TECH standard .gitignore (defense-in-depth against committed secrets).
+# ANNÁVE TECH standard .gitignore (defense-in-depth against committed secrets).
 # This is seeded once (never overwritten) alongside gh's own --gitignore template, if any; the
 # two are complementary, not conflicting — gh's template covers language build artefacts, this
 # one covers the secret/credential patterns no language template reliably includes.
