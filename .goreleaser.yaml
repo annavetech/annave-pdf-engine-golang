@@ -1,0 +1,67 @@
+# ANNAVE PDF Engine — release pipeline
+#
+# Builds the `annave` CLI (cmd/cli) for darwin and linux, amd64 and arm64,
+# publishes a GitHub release with checksums, and pushes an updated Homebrew
+# formula to the tap repository github.com/annavetech/homebrew-annave.
+#
+# Run by .github/workflows/release.yml on every pushed tag matching v*.
+# The version is not injected via ldflags: internal/engine.EngineVersion is
+# a compile-time const, not a package-level var, so -X cannot override it.
+# The release tag and EngineVersion must therefore be kept in step by hand,
+# as documented in docs/CONTRIBUTING.md.
+
+version: 2
+
+project_name: annave-pdf-engine
+
+builds:
+  - id: annave
+    main: ./cmd/cli
+    binary: annave
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - id: annave
+    ids:
+      - annave
+    formats: [tar.gz]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+
+checksum:
+  name_template: "checksums.txt"
+
+brews:
+  - name: annave-pdf-engine
+    ids:
+      - annave
+    repository:
+      owner: annavetech
+      name: homebrew-annave
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    directory: Formula
+    homepage: "https://www.annave.tech"
+    description: "Convert documents to PDF from the command line — ANNAVE PDF Engine"
+    license: "Apache-2.0"
+    install: |
+      bin.install "annave"
+    test: |
+      output = shell_output("#{bin}/annave version")
+      assert_match "ANNAVE PDF Engine", output
+
+      (testpath/"test.md").write("# Test\n\nHello from Homebrew.\n")
+      system bin/"annave", "pdf", "convert", "test.md", "-o", "test.pdf"
+      assert_predicate testpath/"test.pdf", :exist?
+      assert_equal "%PDF", (testpath/"test.pdf").read(4)
+
+release:
+  github:
+    owner: annavetech
+    name: annave-pdf-engine-golang
