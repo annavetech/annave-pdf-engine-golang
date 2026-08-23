@@ -16,6 +16,7 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 ### Documentation
 - `README.md` install instructions corrected: `go install` (works today) and `brew tap` / `brew install` (works once this release is published).
 - The Swift error domain sample in `docs/INTEGRATION.md` keeps an ASCII identifier — the accent belongs in prose, not in a code identifier readers copy into their own projects.
+- The Go integration example in `docs/INTEGRATION.md` imported internal packages, which Go does not permit from outside the module, so the first example a library user reads could not compile. It now uses the public `pdfengine` package instead.
 
 ---
 
