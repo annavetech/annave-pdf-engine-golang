@@ -269,7 +269,7 @@ func convertMarkdown(serverURL: URL, markdown: String) async throws -> Data {
     guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
         let engineError = try JSONDecoder().decode(EngineError.self, from: data)
         throw NSError(
-            domain: "ANNÁVEPDFEngine",
+            domain: "AnnavePDFEngine",
             code: (response as? HTTPURLResponse)?.statusCode ?? 0,
             userInfo: [NSLocalizedDescriptionKey: engineError.error.message]
         )
