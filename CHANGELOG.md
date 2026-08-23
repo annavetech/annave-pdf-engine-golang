@@ -5,6 +5,20 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.1.1] — 2026-08-23
+
+### Added
+- Release pipeline: a pushed `v*` tag now cross-compiles the `annave` CLI for darwin and linux, amd64 and arm64, publishes a GitHub release with `checksums.txt`, and pushes a Homebrew cask to the `annavetech/homebrew-annave` tap. This is the first release `brew install` actually works for — the previous hand-written formula referenced release assets that had never existed, in a tap repository that did not exist either. That formula is removed.
+
+### Fixed
+- Brand spelling: log lines, CLI descriptions, documentation, and schema titles wrote `ANNAVE` without the accent. User-facing text now reads ANNÁVE or ANNÁVE TECH throughout, including `annave version` output and server startup log lines. Environment variable names and `ENGINE_ERR_*` codes were deliberately left untouched.
+
+### Documentation
+- `README.md` install instructions corrected: `go install` (works today) and `brew tap` / `brew install` (works once this release is published).
+- The Swift error domain sample in `docs/INTEGRATION.md` keeps an ASCII identifier — the accent belongs in prose, not in a code identifier readers copy into their own projects.
+
+---
+
 ## [1.1.0] — 2026-08-23
 
 ### Added
