@@ -8,8 +8,29 @@ on:
 
 jobs:
   go:
-    # Calls the central ANNÁVE TECH reusable Go workflow (ANNAVE-1364), which lives in the
-    # annavetechhq org's own .github repo. Pinned to @main deliberately, not a SHA: this is
-    # Anna's own repo (not a third-party action), so the usual full-SHA supply-chain rule does
-    # not apply the same way here — she controls what "main" points at.
-    uses: annavetechhq/.github/.github/workflows/go-ci.yml@main
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      # go.mod declares the minimum supported Go version (1.23); CI builds
+      # against that version so the compatibility promise it makes to
+      # downstream importers is actually verified, not just asserted.
+      - uses: actions/setup-go@3041bf56c941b39c61721a86cd11f3bb1338122a # v5.2.0
+        with:
+          go-version: "1.23"
+
+      - run: go build ./...
+      - run: go vet ./...
+
+      # internal/api includes a deliberate 61-second sleep inside the
+      # rate-limit window test; this step is not given a timeout so that
+      # test is never cut off.
+      - run: go test ./... -race
+
+      - name: gofmt
+        run: |
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "$unformatted"
+            exit 1
+          fi
