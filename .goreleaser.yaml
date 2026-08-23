@@ -2,13 +2,22 @@
 #
 # Builds the `annave` CLI (cmd/cli) for darwin and linux, amd64 and arm64,
 # publishes a GitHub release with checksums, and pushes an updated Homebrew
-# formula to the tap repository github.com/annavetech/homebrew-annave.
+# cask to the tap repository github.com/annavetech/homebrew-annave. The
+# `brews` (Formula) integration is deprecated by GoReleaser in favour of
+# `homebrew_casks`, which is the correct fit for a pre-built binary anyway.
 #
 # Run by .github/workflows/release.yml on every pushed tag matching v*.
 # The version is not injected via ldflags: internal/engine.EngineVersion is
 # a compile-time const, not a package-level var, so -X cannot override it.
 # The release tag and EngineVersion must therefore be kept in step by hand,
 # as documented in docs/CONTRIBUTING.md.
+#
+# The binaries are unsigned and unnotarised — Apple's notarisation service
+# requires a paid developer account. Without handling this, Gatekeeper
+# quarantines the downloaded binary and it refuses to run on first launch.
+# The post-install hook below strips the quarantine attribute, which is
+# GoReleaser's documented approach for casks that are not notarised
+# (https://goreleaser.com/customization/homebrew_casks/#signing-and-notarizing).
 
 version: 2
 
@@ -38,28 +47,25 @@ archives:
 checksum:
   name_template: "checksums.txt"
 
-brews:
+homebrew_casks:
   - name: annave-pdf-engine
     ids:
+      - annave
+    binaries:
       - annave
     repository:
       owner: annavetech
       name: homebrew-annave
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
-    directory: Formula
+    directory: Casks
     homepage: "https://www.annave.tech"
     description: "Convert documents to PDF from the command line — ANNAVE PDF Engine"
-    license: "Apache-2.0"
-    install: |
-      bin.install "annave"
-    test: |
-      output = shell_output("#{bin}/annave version")
-      assert_match "ANNAVE PDF Engine", output
-
-      (testpath/"test.md").write("# Test\n\nHello from Homebrew.\n")
-      system bin/"annave", "pdf", "convert", "test.md", "-o", "test.pdf"
-      assert_predicate testpath/"test.pdf", :exist?
-      assert_equal "%PDF", (testpath/"test.pdf").read(4)
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/annave"]
+          end
 
 release:
   github:
