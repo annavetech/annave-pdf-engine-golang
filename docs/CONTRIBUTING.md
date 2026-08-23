@@ -1,5 +1,5 @@
 <!--
-title:       ANNAVE PDF Engine — Contributing Guide
+title:       ANNÁVE PDF Engine — Contributing Guide
 description: How to add a parser, run tests, submit a pull request,
              and what code style is expected.
 author:      Anna Veretennykova
@@ -94,7 +94,7 @@ See `docs/ARCHITECTURE.md` for the full walkthrough. Short version:
 1. Create `internal/parser/yourformat.go` with a struct implementing `DocumentParser` (two methods: `CanParse`, `Parse`).
 2. Add the format constant and extension mappings to `internal/parser/registry.go`.
 3. Register the parser in `NewRegistry()` — binary parsers (magic-byte checks) before text parsers in the `ordered` slice.
-4. Write a test in `internal/parser/yourformat_test.go`. The test fixture should be a real document from the ANNAVE PDF Engine documentation — not lorem ipsum. This doubles as self-documenting content that people will not delete.
+4. Write a test in `internal/parser/yourformat_test.go`. The test fixture should be a real document from the ANNÁVE PDF Engine documentation — not lorem ipsum. This doubles as self-documenting content that people will not delete.
 5. Update the `ENGINE_ERR_UNSUPPORTED_FORMAT` message in `config/messages.yaml` to include the new format name.
 
 The HTTP handler, pipeline, and renderer require no changes.

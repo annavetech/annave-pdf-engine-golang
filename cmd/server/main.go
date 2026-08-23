@@ -65,7 +65,7 @@ func main() {
 	api.NewHandler(secret, corsOrigin, cfg.RateLimit.RequestsPerMinute).Register(mux)
 
 	addr := ":" + port
-	log.Printf("ANNAVE PDF Engine v%s listening on %s", engine.EngineVersion, addr)
+	log.Printf("ANNÁVE PDF Engine v%s listening on %s", engine.EngineVersion, addr)
 	if err := http.ListenAndServe(addr, mux); err != nil { //nolint:gosec // adding server timeouts would be a behavior change outside the scope of this lint-compliance pass; flagged for Anna's follow-up
 		log.Fatalf("server error: %v", err)
 	}

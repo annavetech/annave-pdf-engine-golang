@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://www.annave.tech/pdf-engine/schema/document.v1",
-  "title": "ANNAVE PDF Engine — Document",
+  "title": "ANNÁVE PDF Engine — Document",
   "description": "The canonical document representation accepted by the engine's JSON input endpoint. All other formats (Markdown, HTML, CSV, etc.) are converted to this structure internally before layout and rendering.",
   "type": "object",
   "required": ["type", "children"],

@@ -1,5 +1,5 @@
 <!--
-title:       ANNAVE PDF Engine — Dependencies
+title:       ANNÁVE PDF Engine — Dependencies
 description: Every direct and indirect dependency, exact pinned version,
              what each does, and what breaks if you change the version.
 author:      Anna Veretennykova

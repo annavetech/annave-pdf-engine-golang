@@ -1,5 +1,5 @@
 <!--
-title:       ANNAVE PDF Engine — Configuration Reference
+title:       ANNÁVE PDF Engine — Configuration Reference
 description: Every configuration key across limits.yaml, style.yaml, server.yaml,
              and messages.yaml — with valid values, defaults, and what breaks at extremes.
 author:      Anna Veretennykova

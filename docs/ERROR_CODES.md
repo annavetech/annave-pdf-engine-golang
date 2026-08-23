@@ -1,5 +1,5 @@
 <!--
-title:       ANNAVE PDF Engine — Error Codes Reference
+title:       ANNÁVE PDF Engine — Error Codes Reference
 description: Full reference for all ENGINE_ERR_* codes: HTTP status, pipeline stage,
              when each code is triggered, and how to handle it in client code.
 author:      Anna Veretennykova

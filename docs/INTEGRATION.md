@@ -1,5 +1,5 @@
 <!--
-title:       ANNAVE PDF Engine — Integration Guide
+title:       ANNÁVE PDF Engine — Integration Guide
 description: How to call the convert endpoint from Go, Node.js, Python, Swift,
              and Angular — with working code examples for each.
 author:      Anna Veretennykova
@@ -269,7 +269,7 @@ func convertMarkdown(serverURL: URL, markdown: String) async throws -> Data {
     guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
         let engineError = try JSONDecoder().decode(EngineError.self, from: data)
         throw NSError(
-            domain: "ANNAVEPDFEngine",
+            domain: "ANNÁVEPDFEngine",
             code: (response as? HTTPURLResponse)?.statusCode ?? 0,
             userInfo: [NSLocalizedDescriptionKey: engineError.error.message]
         )
