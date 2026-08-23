@@ -4,7 +4,7 @@ description: How to call the convert endpoint from Go, Node.js, Python, Swift,
              and Angular — with working code examples for each.
 author:      Anna Veretennykova
 website:     www.annave.tech
-version:     1.0.4
+version:     1.0.5
 created:     2026-05-06
 updated:     2026-08-23
 -->

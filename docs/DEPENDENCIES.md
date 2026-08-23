@@ -4,7 +4,7 @@ description: Every direct and indirect dependency, exact pinned version,
              what each does, and what breaks if you change the version.
 author:      Anna Veretennykova
 website:     www.annave.tech
-version:     1.0.4
+version:     1.0.5
 created:     2026-05-06
 updated:     2026-08-23
 -->

@@ -6,7 +6,7 @@ package engine
 
 import "strings"
 
-const EngineVersion = "1.0.4"
+const EngineVersion = "1.0.5"
 const SchemaVersion = "1"
 
 func IsSchemaCompatible(version string) bool {
