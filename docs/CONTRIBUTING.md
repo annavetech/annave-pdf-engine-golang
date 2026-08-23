@@ -4,7 +4,7 @@ description: How to add a parser, run tests, submit a pull request,
              and what code style is expected.
 author:      Anna Veretennykova
 website:     www.annave.tech
-version:     1.1.0
+version:     1.1.1
 created:     2026-05-06
 updated:     2026-08-23
 -->
@@ -127,7 +127,7 @@ The six stages are fixed at the architectural level. Adding a seventh stage requ
 The engine follows [Semantic Versioning](https://semver.org). The version is set in `internal/engine/config.go`:
 
 ```go
-const EngineVersion = "1.1.0"
+const EngineVersion = "1.1.1"
 ```
 
 - Patch (1.0.x): bug fixes, no API or config key changes
