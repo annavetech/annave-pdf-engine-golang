@@ -42,6 +42,34 @@ curl -X POST http://localhost:5741/convert \
 
 ---
 
+## Use as a library
+
+The engine is also a Go module, for services that want to convert documents
+in-process instead of calling an HTTP endpoint:
+
+```bash
+go get github.com/annavetech/annave-pdf-engine-golang
+```
+
+```go
+import "github.com/annavetech/annave-pdf-engine-golang"
+
+pdf, err := pdfengine.New().Convert(text, pdfengine.FormatMarkdown)
+if err != nil {
+    var pe *pdfengine.Error
+    if errors.As(err, &pe) {
+        // pe.Code is a stable, machine-readable identifier, e.g. "ENGINE_ERR_PARSE_FAILED".
+    }
+    return err
+}
+```
+
+An `Engine` is safe to reuse across many calls to `Convert`. Pass
+`pdfengine.FormatAuto` to detect the format from the content, or override
+typography and page margins per call with `pdfengine.WithStyle`.
+
+---
+
 ## Supported input formats
 
 | Format | Extension | Notes |
