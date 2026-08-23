@@ -4,7 +4,7 @@ description: Every configuration key across limits.yaml, style.yaml, server.yaml
              and messages.yaml — with valid values, defaults, and what breaks at extremes.
 author:      Anna Veretennykova
 website:     www.annave.tech
-version:     1.1.1
+version:     1.2.0
 created:     2026-05-06
 updated:     2026-08-23
 -->

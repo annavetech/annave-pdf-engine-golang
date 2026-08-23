@@ -4,7 +4,7 @@ description: Eight practical use cases with real request and response examples.
              No marketing language — just what works and what to watch for.
 author:      Anna Veretennykova
 website:     www.annave.tech
-version:     1.1.1
+version:     1.2.0
 created:     2026-05-06
 updated:     2026-08-23
 -->

@@ -4,7 +4,7 @@ description: The problem, the design decisions, the tradeoffs, and the
              performance characteristics of the ANNÁVE PDF Engine v1.0.
 author:      Anna Veretennykova
 website:     www.annave.tech
-version:     1.1.1
+version:     1.2.0
 created:     2026-05-06
 updated:     2026-08-23
 -->

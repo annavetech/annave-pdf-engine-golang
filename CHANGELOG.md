@@ -5,18 +5,23 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [1.1.1] — 2026-08-23
+## [1.2.0] — 2026-08-23
 
 ### Added
-- Release pipeline: a pushed `v*` tag now cross-compiles the `annave` CLI for darwin and linux, amd64 and arm64, publishes a GitHub release with `checksums.txt`, and pushes a Homebrew cask to the `annavetech/homebrew-annave` tap. This is the first release `brew install` actually works for — the previous hand-written formula referenced release assets that had never existed, in a tap repository that did not exist either. That formula is removed.
+- Releases now publish binaries for macOS and Linux on amd64 and arm64 with checksums, and a Homebrew cask in the `annavetech/annave` tap. Install with `brew tap annavetech/annave && brew install annave-pdf-engine`.
 
 ### Fixed
-- Brand spelling: log lines, CLI descriptions, documentation, and schema titles wrote `ANNAVE` without the accent. User-facing text now reads ANNÁVE or ANNÁVE TECH throughout, including `annave version` output and server startup log lines. Environment variable names and `ENGINE_ERR_*` codes were deliberately left untouched.
+- Security: `golang.org/x/image` 0.23.0 → 0.45.0 and `golang.org/x/net` 0.33.0 → 0.58.0. Both were reachable from the code paths that handle uploaded files — image decoding, HTML parsing, and HTML sanitising.
+- The Docker image now builds against a Go version that satisfies the module's floor.
+- CLI output, log lines, documentation, and schema titles now use the correct ANNÁVE spelling. Environment variable names and `ENGINE_ERR_*` codes are unchanged.
+
+### Changed
+- Minimum Go version is now 1.25, raised from 1.23. The `golang.org/x/image` releases that fix the vulnerabilities above require it.
+- Release binaries are built with the current Go toolchain, so they carry current standard-library fixes.
 
 ### Documentation
-- `README.md` install instructions corrected: `go install` (works today) and `brew tap` / `brew install` (works once this release is published).
-- The Swift error domain sample in `docs/INTEGRATION.md` keeps an ASCII identifier — the accent belongs in prose, not in a code identifier readers copy into their own projects.
-- The Go integration example in `docs/INTEGRATION.md` imported internal packages, which Go does not permit from outside the module, so the first example a library user reads could not compile. It now uses the public `pdfengine` package instead.
+- The Go example in the integration guide uses the public `pdfengine` package.
+- `README.md` install instructions corrected.
 
 ---
 
