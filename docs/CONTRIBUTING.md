@@ -27,7 +27,7 @@ go test ./...
 go run cmd/server/main.go
 ```
 
-Go 1.23 or later is required.
+Go 1.25 or later is required.
 
 ---
 

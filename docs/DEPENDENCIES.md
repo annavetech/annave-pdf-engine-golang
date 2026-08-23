@@ -11,7 +11,7 @@ updated:     2026-08-23
 
 # Dependencies
 
-Go version: **1.23** (minimum). The engine uses `log/slog` (added in 1.21) and pattern-based HTTP routing in `net/http` (added in 1.22).
+Go version: **1.25** (minimum). The engine uses `log/slog` (added in 1.21) and pattern-based HTTP routing in `net/http` (added in 1.22); the 1.25 floor itself comes from `golang.org/x/image` v0.45.0, which is required to clear a reachable memory-allocation vulnerability (GO-2026-6222) and declares `go 1.25.0`.
 
 All dependencies are listed in `go.mod`. Run `go mod verify` to confirm checksums match `go.sum`.
 

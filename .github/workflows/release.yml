@@ -20,11 +20,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      # go.mod declares the minimum supported Go version (1.23); build against
-      # that version, matching .github/workflows/ci.yml.
+      # go.mod declares 1.25 as the minimum supported Go version, but
+      # released binaries are built here, not just verified — so this uses
+      # "stable" rather than pinning to that minimum. The standard library
+      # itself ships security fixes per patch release; building the actual
+      # release artifacts with the current Go keeps them off a known-vulnerable
+      # toolchain without ever raising the go.mod compatibility promise.
+      # .github/workflows/ci.yml verifies the 1.25 minimum still builds.
       - uses: actions/setup-go@3041bf56c941b39c61721a86cd11f3bb1338122a # v5.2.0
         with:
-          go-version: "1.23"
+          go-version: "stable"
 
       - uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
         with:
