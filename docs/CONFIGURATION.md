@@ -1,7 +1,7 @@
 <!--
-title:       ANNÁVE PDF Engine — Configuration Reference
-description: Every configuration key across limits.yaml, style.yaml, server.yaml,
-             and messages.yaml — with valid values, defaults, and what breaks at extremes.
+title:       ANNÁVE PDF Engine: Configuration Reference
+description: Every configuration key across limits.yaml, style.yaml,
+             and messages.yaml, with valid values, defaults, and what breaks at extremes.
 author:      Anna Veretennykova
 website:     www.annave.tech
 version:     1.2.0
@@ -11,11 +11,13 @@ updated:     2026-08-23
 
 # Configuration Reference
 
-The engine uses four YAML files in `config/`. All are embedded into the binary at build time via `//go:embed`. There are no external file reads at runtime.
+The engine uses three YAML files in `config/`. All three are embedded into the binary at build time via `//go:embed`, and every `Engine` uses those embedded values by default.
 
-**To change a value:** edit the YAML file, then rebuild with `go build ./cmd/server`.
+**To change the embedded default:** edit the YAML file, then rebuild with `go build ./cmd/cli`.
 
-Environment variables override specific server settings at runtime without a rebuild — see `config/server.yaml` for which keys have env var overrides.
+**To change `style.yaml` or `limits.yaml` without rebuilding:** pass your own file to `pdfengine.New` (`pdfengine.New(pdfengine.WithStyleFile(path))`, `pdfengine.New(pdfengine.WithLimitsFile(path))`, or both together), or, from the CLI, `annave pdf convert --style-file path` / `--limits-file path`. The library itself never reads a file unless one of these options names it explicitly: there is no implicit directory convention, no environment-variable lookup, and no filesystem scan inside the library. A caller that wants a discovery convention of its own (an environment variable, a fixed path, a flag) resolves that path itself and passes the result to one of these options. `config/messages.yaml` has no such override; every `Engine` uses the embedded messages.
+
+Two `Engine` values built with different `WithStyleFile`/`WithLimitsFile` options hold genuinely independent configuration in the same process; nothing here is a single process-wide setting.
 
 ---
 
@@ -31,13 +33,13 @@ Controls input and output size limits. Exceeding any limit returns an `ENGINE_ER
 | Unit | bytes |
 | Error on exceed | `ENGINE_ERR_FILE_TOO_LARGE` |
 
-Maximum size of a single uploaded file or raw request body. The HTTP layer enforces a slightly higher ceiling (this value + 1 MB) to account for multipart form encoding overhead.
+Maximum size of a single input document.
 
 | Size | Bytes | Notes |
 |---|---|---|
 | 1 MB | 1048576 | Rejects most DOCX files with images |
 | 2 MB | 2097152 | Covers plain DOCX and most Markdown |
-| 5 MB | 5242880 | Default — covers most real-world documents |
+| 5 MB | 5242880 | Default: covers most real-world documents |
 | 10 MB | 10485760 | Allows large CSV exports |
 | 20 MB | 20971520 | Allows large Jupyter notebooks |
 | 50 MB | 52428800 | Watch memory usage under concurrent load |
@@ -58,7 +60,7 @@ Maximum length of the normalised input string, applied after UTF-8 decode and li
 |---|---|
 | 100,000 | Short reports, invoices |
 | 500,000 | Default |
-| 2,000,000 | Technical manuals, legal docs — watch memory under concurrent load |
+| 2,000,000 | Technical manuals, legal docs; watch memory under concurrent load |
 
 ### `document.max_nodes`
 
@@ -73,7 +75,7 @@ Maximum number of block-level nodes in a parsed document. One node = one paragra
 | Value | Notes |
 |---|---|
 | 500 | Short reports, invoices |
-| 2,000 | Default — covers most real-world documents |
+| 2,000 | Default: covers most real-world documents |
 | 10,000 | Very large technical documentation |
 
 ### `document.max_pages`
@@ -84,11 +86,11 @@ Maximum number of block-level nodes in a parsed document. One node = one paragra
 | Unit | PDF pages |
 | Error on exceed | `ENGINE_ERR_TOO_MANY_PAGES` |
 
-Maximum number of PDF pages per request. 100 pages at A4 / 13px body / 1.65 line height is approximately 10,000 words.
+Maximum number of PDF pages the engine will produce for a single conversion. 100 pages at A4 / 13px body / 1.65 line height is approximately 10,000 words.
 
 | Value | Notes |
 |---|---|
-| 20 | Short reports — enforce page budget |
+| 20 | Short reports: enforce page budget |
 | 100 | Default |
 | 500 | Book-length documents |
 
@@ -150,75 +152,15 @@ Default values:
 
 ---
 
-## `config/server.yaml`
-
-Controls the HTTP server, CORS, and optional features. Environment variables override YAML values at startup — no rebuild needed.
-
-### `server.port`
-
-| Field | Value |
-|---|---|
-| Default | `5741` |
-| Env var override | `PORT` |
-
-TCP port the server listens on. Most PaaS platforms (Vercel, Railway, Render) set `PORT` automatically.
-
-### `server.debug`
-
-| Field | Value |
-|---|---|
-| Default | `false` |
-| Env var override | `ANNAVE_DEBUG=true` |
-
-When `true`, sets the slog level to `DEBUG`. Do not enable in production — debug logs may include request content.
-
-### `cors.allowed_origin`
-
-| Field | Value |
-|---|---|
-| Default | `"*"` |
-| Env var override | `ANNAVE_CORS_ORIGIN` |
-
-The value of the `Access-Control-Allow-Origin` response header. Use `"*"` for public APIs or local development. Use your specific domain (`https://www.annave.tech`) in production.
-
-### `schema.base_url`
-
-| Field | Value |
-|---|---|
-| Default | `https://www.annave.tech/pdf-engine/schema` |
-
-Base URL for JSON Schema `$id` fields. Change this if you fork the engine and host your own schema registry. Informational only — the engine does not fetch schemas at runtime.
-
-### `rate_limit.requests_per_minute`
-
-| Field | Value |
-|---|---|
-| Default | `0` (disabled) |
-
-Per-IP sliding-window rate limit. 0 disables rate limiting.
-
----
-
 ## `config/messages.yaml`
 
 Defines all user-facing error and success messages. Keys are error codes; values are message templates with `{placeholder}` interpolation.
 
-**Operators can customise messages** by editing this file and rebuilding. For example, to add a support email to the `ENGINE_ERR_INTERNAL` message:
+**Operators can customise messages** by editing this file and rebuilding. For example, to add a support email to the `ENGINE_ERR_RENDER_FAILED` message:
 
 ```yaml
 errors:
-  ENGINE_ERR_INTERNAL: "An internal error occurred. Contact support@example.com with request ID {request_id}."
+  ENGINE_ERR_RENDER_FAILED: "PDF rendering failed: {detail}. Contact support@example.com."
 ```
 
-Do not rename keys — the engine looks up messages by error code. Do not remove keys — a missing key falls back to `"unknown error code: ENGINE_ERR_*"`.
-
----
-
-## Environment variables summary
-
-| Variable | Config key overridden | Default |
-|---|---|---|
-| `PORT` | `server.port` | `5741` |
-| `ANNAVE_INTERNAL_TOKEN` | *(no YAML equivalent)* | `""` (auth disabled) |
-| `ANNAVE_DEBUG` | `server.debug` | `false` |
-| `ANNAVE_CORS_ORIGIN` | `cors.allowed_origin` | `"*"` |
+Do not rename keys: the engine looks up messages by error code. Do not remove keys: a missing key falls back to `"unknown error code: ENGINE_ERR_*"`.

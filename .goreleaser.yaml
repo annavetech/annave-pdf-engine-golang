@@ -1,4 +1,4 @@
-# ANNÁVE PDF Engine — release pipeline
+# ANNÁVE PDF Engine: release pipeline
 #
 # Builds the `annave` CLI (cmd/cli) for darwin and linux, amd64 and arm64,
 # publishes a GitHub release with checksums, and pushes an updated Homebrew
@@ -6,13 +6,17 @@
 # `brews` (Formula) integration is deprecated by GoReleaser in favour of
 # `homebrew_casks`, which is the correct fit for a pre-built binary anyway.
 #
-# Run by .github/workflows/release.yml on every pushed tag matching v*.
+# Run by .github/workflows/release.yml for every pushed tag matching v*,
+# once .github/workflows/ci.yml has passed for that exact commit, per
+# release.yml's own workflow_run gate. The GoReleaser tool version itself is
+# pinned in release.yml's goreleaser-action step, not here: this file has no
+# field for it, it is purely the release-content configuration.
 # The version is not injected via ldflags: internal/engine.EngineVersion is
 # a compile-time const, not a package-level var, so -X cannot override it.
 # The release tag and EngineVersion must therefore be kept in step by hand,
 # as documented in docs/CONTRIBUTING.md.
 #
-# The binaries are unsigned and unnotarised — Apple's notarisation service
+# The binaries are unsigned and unnotarised. Apple's notarisation service
 # requires a paid developer account. Without handling this, Gatekeeper
 # quarantines the downloaded binary and it refuses to run on first launch.
 # The post-install hook below strips the quarantine attribute, which is
@@ -59,7 +63,7 @@ homebrew_casks:
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
     directory: Casks
     homepage: "https://www.annave.tech"
-    description: "Convert documents to PDF from the command line — ANNÁVE PDF Engine"
+    description: "Convert documents to PDF from the command line (ANNÁVE PDF Engine)"
     hooks:
       post:
         install: |

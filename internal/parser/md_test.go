@@ -27,7 +27,7 @@ func TestMdParser_CanParse(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			if got := p.CanParse(tc.input); got != tc.want {
+			if got := p.CanParse([]byte(tc.input)); got != tc.want {
 				t.Errorf("CanParse(%q) = %v, want %v", tc.input, got, tc.want)
 			}
 		})
@@ -60,7 +60,7 @@ A paragraph with **bold** and _italic_ text.
 ![alt text](https://example.com/img.png)
 `
 	p := &MdParser{}
-	doc, err := p.Parse(input)
+	doc, err := p.Parse([]byte(input))
 	if err != nil {
 		t.Fatalf("Parse() error: %v", err)
 	}
@@ -93,7 +93,7 @@ A paragraph with **bold** and _italic_ text.
 
 func TestMdParser_Parse_HeadingLevels(t *testing.T) {
 	p := &MdParser{}
-	doc, _ := p.Parse("# H1\n\n## H2\n\n### H3\n\n#### H4 (capped at 3)")
+	doc, _ := p.Parse([]byte("# H1\n\n## H2\n\n### H3\n\n#### H4 (capped at 3)"))
 
 	if len(doc.Children) != 4 {
 		t.Fatalf("expected 4 heading nodes, got %d", len(doc.Children))
@@ -108,7 +108,7 @@ func TestMdParser_Parse_HeadingLevels(t *testing.T) {
 
 func TestMdParser_Parse_FencedCodeBlockLanguage(t *testing.T) {
 	p := &MdParser{}
-	doc, _ := p.Parse("# Title\n\n```python\nprint('hello')\n```")
+	doc, _ := p.Parse([]byte("# Title\n\n```python\nprint('hello')\n```"))
 
 	var codeNode *ast.Node
 	for i := range doc.Children {
@@ -132,7 +132,7 @@ func TestMdParser_Parse_HTMLFragmentsInParagraph(t *testing.T) {
 	// Markdown with inline HTML references must produce paragraph nodes,
 	// not be misidentified as an HTML document.
 	p := &MdParser{}
-	doc, _ := p.Parse("# Title\n\nThis embeds content via <iframe> or <embed> tags.")
+	doc, _ := p.Parse([]byte("# Title\n\nThis embeds content via <iframe> or <embed> tags."))
 
 	if len(doc.Children) != 2 {
 		t.Fatalf("expected 2 nodes (heading + paragraph), got %d", len(doc.Children))
@@ -201,7 +201,7 @@ func FuzzMdParser(f *testing.F) {
 				t.Errorf("MdParser.Parse panicked on input %q: %v", s, r)
 			}
 		}()
-		_, _ = p.Parse(s)
+		_, _ = p.Parse([]byte(s))
 	})
 }
 

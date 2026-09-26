@@ -1,5 +1,5 @@
 <!--
-title:       ANNÁVE PDF Engine — Contributing Guide
+title:       ANNÁVE PDF Engine: Contributing Guide
 description: How to add a parser, run tests, submit a pull request,
              and what code style is expected.
 author:      Anna Veretennykova
@@ -18,13 +18,13 @@ git clone https://github.com/annavetech/annave-pdf-engine-golang.git
 cd annave-pdf-engine-golang
 
 # Build
-go build ./cmd/server
+go build ./cmd/cli
 
 # Run tests
 go test ./...
 
-# Run the server locally (no auth)
-go run cmd/server/main.go
+# Convert a document locally
+go run ./cmd/cli pdf convert README.md -o output.pdf
 ```
 
 Go 1.25 or later is required.
@@ -55,7 +55,7 @@ go test -race ./...
 `internal/engine/golden_test.go` renders `internal/engine/testdata/golden.md`
 and byte-compares the result against the committed
 `internal/engine/testdata/golden.pdf`. This is what proves a refactor left
-rendered output unchanged — a pure change (regex hoisting, loop restructuring)
+rendered output unchanged: a pure change (regex hoisting, loop restructuring)
 must produce identical bytes; if it does not, something was transcribed
 wrongly.
 
@@ -80,9 +80,9 @@ of a normal `go test ./...`.
   //
   // SPDX-License-Identifier: Apache-2.0
   ```
-- Comments only when the reason is non-obvious — not what the code does, but why it does it that way.
-- No `_test.go` file uses mocks for the database, filesystem, or HTTP. The pipeline tests call `Pipeline.Run` directly. The HTTP tests use `httptest.NewRecorder`. No fakes for the PDF renderer — tests assert on the error return, not the PDF content.
-- `gofmt` is the formatter. No additional linters are required, but `go vet ./...` must pass.
+- Comments only when the reason is non-obvious: not what the code does, but why it does it that way.
+- No `_test.go` file uses mocks for the database or filesystem. The pipeline tests call `Pipeline.Run` directly. No fakes for the PDF renderer: tests assert on the error return, not the PDF content.
+- CI requires `gofmt`, `go vet ./...`, `golangci-lint` v1.64.8, `govulncheck` v1.8.0, and `go test ./... -race` to all pass. Run the linter and vuln check locally with the same pinned versions CI uses: `go run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8 run ./...` and `go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...`.
 - Error codes must be added to `config/messages.yaml` before they are used in Go code. Do not hardcode message strings in `.go` files.
 
 ---
@@ -91,13 +91,13 @@ of a normal `go test ./...`.
 
 See `docs/ARCHITECTURE.md` for the full walkthrough. Short version:
 
-1. Create `internal/parser/yourformat.go` with a struct implementing `DocumentParser` (two methods: `CanParse`, `Parse`).
+1. Create `internal/parser/yourformat.go` with a struct implementing `parser.Parser` (two methods: `CanParse`, `Parse`).
 2. Add the format constant and extension mappings to `internal/parser/registry.go`.
-3. Register the parser in `NewRegistry()` — binary parsers (magic-byte checks) before text parsers in the `ordered` slice.
-4. Write a test in `internal/parser/yourformat_test.go`. The test fixture should be a real document from the ANNÁVE PDF Engine documentation — not lorem ipsum. This doubles as self-documenting content that people will not delete.
+3. Register the parser in `NewRegistry()`: binary parsers (magic-byte checks) before text parsers in the `ordered` slice.
+4. Write a test in `internal/parser/yourformat_test.go`. The test fixture should be a real document from the ANNÁVE PDF Engine documentation, not lorem ipsum. This doubles as self-documenting content that people will not delete.
 5. Update the `ENGINE_ERR_UNSUPPORTED_FORMAT` message in `config/messages.yaml` to include the new format name.
 
-The HTTP handler, pipeline, and renderer require no changes.
+The pipeline and renderer require no changes.
 
 ---
 
@@ -106,7 +106,7 @@ The HTTP handler, pipeline, and renderer require no changes.
 The six stages are fixed at the architectural level. Adding a seventh stage requires:
 
 1. Write the stage function in `internal/engine/`.
-2. Add a new `EngineStage` constant in `internal/engine/errors.go` and add it to the `stage` enum in `schema/error.v1.schema.json`.
+2. Add a new `EngineStage` constant in `internal/engine/errors.go`.
 3. Call it in `Pipeline.Run` in `internal/engine/pipeline.go` at the correct position.
 4. Write tests in `internal/engine/` that exercise the new stage in isolation and as part of the full pipeline.
 
@@ -118,7 +118,7 @@ The six stages are fixed at the architectural level. Adding a seventh stage requ
 2. Make your changes. `go build ./...` and `go test ./...` must pass.
 3. Add a test for any new behaviour. For parsers, use a real fixture from the engine documentation.
 4. Open a PR against `main`. Describe what the change does and why, not just what files changed.
-5. Do not bump the version in `internal/engine/config.go` — that is done at release time.
+5. Do not bump the version in `internal/engine/config.go`; that is done at release time.
 
 ---
 
@@ -132,7 +132,7 @@ const EngineVersion = "1.2.0"
 
 - Patch (1.0.x): bug fixes, no API or config key changes
 - Minor (1.x.0): new parsers, new config keys (all backward compatible)
-- Major (x.0.0): breaking changes to the HTTP API, error code scheme, or AST structure
+- Major (x.0.0): breaking changes to the public Go API, error code scheme, or AST structure
 
 ---
 
@@ -141,5 +141,4 @@ const EngineVersion = "1.2.0"
 Open an issue at the project repository. Include:
 - The input format
 - A minimal reproduction (smallest input that triggers the bug)
-- The `X-Request-Id` header from the failing response
-- The full JSON error body
+- The full error returned by `Convert` (`Code`, `Stage`, and `Message`)

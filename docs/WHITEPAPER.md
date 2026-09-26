@@ -1,5 +1,5 @@
 <!--
-title:       ANNÁVE PDF Engine — Technical White Paper
+title:       ANNÁVE PDF Engine: Technical White Paper
 description: The problem, the design decisions, the tradeoffs, and the
              performance characteristics of the ANNÁVE PDF Engine v1.0.
 author:      Anna Veretennykova
@@ -17,7 +17,7 @@ Generating PDFs from structured documents is a common requirement across develop
 
 **Browser-based rendering** (Puppeteer, wkhtmltopdf, WeasyPrint): Launch a headless browser or WebKit engine, render HTML, and print to PDF. These produce visually accurate output because they use real CSS layout engines. The cost is significant: a headless Chrome instance consumes 150–300 MB of RAM at idle, takes 2–5 seconds to cold-start, and requires a separate process per request or a managed pool. Operating one at scale requires infrastructure that is disproportionate to the task.
 
-**Document library approach** (iTextPDF, Apache PDFBox, reportlab): Imperative APIs where you position every element by hand. These are powerful but require substantial code to convert a document into a PDF; there is no concept of "document to PDF" — only "draw text at this position." Integrating a new input format (say, DOCX) requires implementing the full conversion chain in the library's API.
+**Document library approach** (iTextPDF, Apache PDFBox, reportlab): Imperative APIs where you position every element by hand. These are powerful but require substantial code to convert a document into a PDF; there is no concept of "document to PDF": only "draw text at this position." Integrating a new input format (say, DOCX) requires implementing the full conversion chain in the library's API.
 
 Neither category is well-suited to the use case of "accept a document in any common format, produce a clean PDF, do it fast."
 
@@ -25,13 +25,13 @@ Neither category is well-suited to the use case of "accept a document in any com
 
 ## Design goals
 
-1. **Single binary, no external processes.** The engine must run as a single Go binary with no runtime dependencies — no browser, no Java, no Python. This keeps deployment simple: copy the binary, run it.
+1. **Single binary, no external processes.** The engine must run as a single Go binary with no runtime dependencies: no browser, no Java, no Python. This keeps deployment simple: copy the binary, run it.
 
 2. **Zero-dependency parsing.** The DOCX parser uses only `archive/zip` and `encoding/xml` from the standard library. The CSV, YAML, XML, and JSON parsers use only `encoding/csv`, `gopkg.in/yaml.v3`, and `encoding/xml`. The HTML parser uses `golang.org/x/net/html`. No external document processing libraries.
 
-3. **Consistent output.** Every document type produces output styled by the same `config/style.yaml`. A Markdown README and a DOCX specification look identical side by side. This is a deliberate constraint — the engine is not a layout fidelity tool, it is a consistent rendering tool.
+3. **Consistent output.** Every document type produces output styled by the same `config/style.yaml`. A Markdown README and a DOCX specification look identical side by side. This is a deliberate constraint: the engine is not a layout fidelity tool, it is a consistent rendering tool.
 
-4. **Operator-configurable, developer-transparent.** Operators adjust limits and styles by editing YAML files and rebuilding. Developers adding a new parser implement two methods and register the parser in one place. Nothing else changes.
+4. **Operator-configurable, developer-transparent.** Operators adjust the embedded defaults by editing YAML files and rebuilding, or override style and limits at runtime per `Engine` by supplying their own YAML file (`WithStyleFile`, `WithLimitsFile`), without a rebuild. Developers adding a new parser implement two methods and register the parser in one place. Nothing else changes.
 
 5. **Predictable resource use.** Memory consumption is bounded by the configured limits: max file size, max input chars, max nodes, max pages. A request that produces 100 pages holds those layout boxes in memory until rendering completes, then frees them. There is no unbounded growth path.
 
@@ -39,13 +39,13 @@ Neither category is well-suited to the use case of "accept a document in any com
 
 ## Architecture summary
 
-The engine is a hexagonal (ports and adapters) architecture. The domain core is a six-stage pipeline:
+The engine is a six-stage pipeline (`internal/engine`), driven directly by two consumers: the public `pdfengine` package and the `annave` CLI. See `docs/ARCHITECTURE.md` for the full package map.
 
 ```
 Normalise → Parse → Validate → Layout → Paginate → Render
 ```
 
-Each stage is a pure function over the output of the previous stage. The pipeline itself has no knowledge of HTTP, file I/O, or the PDF renderer API. This makes each stage independently testable and replaceable.
+Each stage is a pure function over the output of the previous stage. The pipeline itself has no knowledge of file I/O or the PDF renderer API. This makes each stage independently testable and replaceable.
 
 The parser registry uses a two-path dispatch: explicit format (O(1) map lookup) or auto-detection (ordered probe, typically resolves in 1–3 checks for common formats). Binary format parsers check magic bytes and are listed first; text format parsers use structural heuristics.
 
@@ -69,9 +69,9 @@ For use cases that require CSS layout fidelity (marketing pages, complex reports
 
 ### HTML sanitisation before parsing
 
-When the input format is HTML, `bluemonday` strips all disallowed tags and attributes before the HTML parser runs. This is a deliberate security decision: the engine runs as an HTTP server and must not be a vector for stored XSS (if the PDF is later viewed in a browser-based viewer) or for triggering panics in the HTML parser via malformed input.
+When the input format is HTML, `bluemonday` strips all disallowed tags and attributes before the HTML parser runs. This is a deliberate security decision: the engine accepts HTML from callers who may not have sanitised it themselves, and must not be a vector for stored XSS (if the PDF is later viewed in a browser-based viewer) or for triggering panics in the HTML parser via malformed input.
 
-The cost is that some valid HTML — particularly anything relying on CSS classes, inline styles, or JavaScript — is stripped. For internal, trusted HTML generation pipelines, this can be relaxed by modifying the sanitisation policy in `internal/engine/sanitizer.go`.
+The cost is that some valid HTML (particularly anything relying on CSS classes, inline styles, or JavaScript) is stripped. For internal, trusted HTML generation pipelines, this can be relaxed by modifying the sanitisation policy in `internal/engine/sanitizer.go`.
 
 ### No font subsetting
 
@@ -79,11 +79,11 @@ Embedded fonts (Inter, JetBrains Mono) are included in their entirety in every P
 
 ### No streaming output
 
-The engine renders the complete PDF into memory before writing any bytes to the HTTP response. This means:
+The engine renders the complete PDF into memory before returning it as a single `[]byte`. This means:
 
 - A 500-page document holds its full layout in memory until the PDF is complete
-- The client does not receive any bytes until rendering is done
-- There is no ability to cancel mid-render if the client disconnects
+- The caller does not receive any bytes until rendering is done
+- There is no ability to cancel mid-render
 
 For the expected use cases (documents up to 100 pages), memory consumption is in the range of 5–50 MB per request. Streaming would require a different PDF generation approach (incremental page writing) and is not planned for v1.
 
@@ -108,22 +108,18 @@ Concurrent request handling: Go's goroutine model handles concurrent requests na
 
 ## Security model
 
-The engine is designed to be deployed as an internal service, not a public endpoint. The security model assumes:
+The engine is a library and a CLI, not a network service. The security model assumes:
 
-1. **Network boundary:** The engine runs behind a gateway (Vercel, Nginx, Cloudflare) that handles TLS, DDoS protection, and IP allowlisting. The engine itself does not terminate TLS.
+1. **Input sanitisation:** HTML inputs are sanitised via bluemonday. DOCX inputs are parsed from their ZIP/XML structure; no executable content is read or executed. Image inputs are decoded only for dimension detection; no image processing libraries with known parsing vulnerabilities are used.
 
-2. **Token authentication:** When `ANNAVE_INTERNAL_TOKEN` is set, all requests to `/convert` must include the correct `X-Internal-Token` header. The token comparison is a direct string equality check (not timing-safe constant-time comparison) — acceptable for an internal service where the token is long and random, but worth noting.
+2. **No outbound network:** The engine makes no outbound network requests. URL images (e.g. `![alt](https://example.com/image.png)` in Markdown) are rendered as placeholders, not fetched. This prevents server-side request forgery (SSRF).
 
-3. **Input sanitisation:** HTML inputs are sanitised via bluemonday. DOCX inputs are parsed from their ZIP/XML structure — no executable content is read or executed. Image inputs are decoded only for dimension detection; no image processing libraries with known parsing vulnerabilities are used.
-
-4. **No outbound network:** The engine makes no outbound HTTP requests. URL images (e.g. `![alt](https://example.com/image.png)` in Markdown) are rendered as placeholders, not fetched. This prevents server-side request forgery (SSRF).
-
-5. **Size limits:** All inputs are bounded by the limits in `config/limits.yaml`. The HTTP layer enforces a hard ceiling of `max_file_size_bytes + 1 MB` before any parsing begins.
+3. **Size limits:** All inputs are bounded by the limits in `config/limits.yaml`, enforced before parsing begins.
 
 ---
 
 ## Future directions
 
-- **Inline rich text rendering:** The layout engine computes per-token style information (`MeasuredToken` in `measurer.go`), and the renderer tracks horizontal position across tokens and switches gopdf font state mid-line to render bold, italic, and code spans inline — but only for headings and paragraphs. List items and blockquote text carry the same span data through layout, then get flattened to a single font before rendering; tables have no per-cell span data in the AST to begin with. Extending inline rendering to lists and blockquotes, and adding span support to table cells, is what remains.
+- **Inline rich text rendering:** The layout engine computes per-token style information (`MeasuredToken` in `measurer.go`), and the renderer tracks horizontal position across tokens and switches gopdf font state mid-line to render bold, italic, and code spans inline, but only for headings and paragraphs. List items and blockquote text carry the same span data through layout, then get flattened to a single font before rendering; tables have no per-cell span data in the AST to begin with. Extending inline rendering to lists and blockquotes, and adding span support to table cells, is what remains.
 
 - **Streaming output:** Write each PDF page to the response as it is rendered, reducing time-to-first-byte for long documents. Requires gopdf support for incremental page writing.

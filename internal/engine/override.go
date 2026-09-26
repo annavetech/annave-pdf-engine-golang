@@ -4,18 +4,8 @@
 
 package engine
 
-// StyleOverride is the JSON-decodable structure accepted in the ?style= query
-// parameter or the `style` multipart/form field. All fields are optional;
-// only the fields present in the JSON are applied on top of the defaults from
-// config/style.yaml.
-//
-// Example JSON:
-//
-//	{
-//	  "paragraph": { "fontSize": 14, "lineHeight": 1.8 },
-//	  "heading1":  { "color": "#cc0000" },
-//	  "page":      { "marginX": 72 }
-//	}
+// StyleOverride holds per-Engine style overrides; every field is optional
+// and only set fields are applied. The CLI decodes it from the --style flag's JSON.
 type StyleOverride struct {
 	Heading1   *PartialTextStyle  `json:"heading1,omitempty"`
 	Heading2   *PartialTextStyle  `json:"heading2,omitempty"`

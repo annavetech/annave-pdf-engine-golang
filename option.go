@@ -6,23 +6,36 @@ package pdfengine
 
 import "github.com/annavetech/annave-pdf-engine-golang/internal/engine"
 
-// Option configures a single Convert call.
+// Option configures an Engine at construction, in New. Options apply once,
+// when the Engine is built; there is no per-Convert-call configuration.
 type Option func(*options)
 
 type options struct {
-	style *Style
+	style      *Style
+	stylePath  string
+	limitsPath string
 }
 
-// WithStyle overrides specific typography and page settings for one
-// conversion, on top of the engine's built-in defaults. Fields left nil on
-// s leave the corresponding default untouched.
+// WithStyle overrides specific typography and page settings for this
+// Engine. Fields left nil on s leave the corresponding default untouched.
 func WithStyle(s Style) Option {
 	return func(o *options) { o.style = &s }
 }
 
+// WithStyleFile replaces the embedded default config/style.yaml with the
+// YAML file at path for this Engine.
+func WithStyleFile(path string) Option {
+	return func(o *options) { o.stylePath = path }
+}
+
+// WithLimitsFile replaces the embedded default config/limits.yaml with the
+// YAML file at path for this Engine.
+func WithLimitsFile(path string) Option {
+	return func(o *options) { o.limitsPath = path }
+}
+
 // Style overrides specific typography and page settings on top of the
-// engine's built-in defaults (config/style.yaml). All fields are optional;
-// a nil field leaves the corresponding default untouched.
+// engine's built-in defaults. A nil field leaves the default untouched.
 type Style struct {
 	Heading1   *TextStyle
 	Heading2   *TextStyle
@@ -33,9 +46,8 @@ type Style struct {
 	Page       *PageStyle
 }
 
-// TextStyle overrides the font and spacing settings for one block kind
-// (a heading level, a paragraph, a code block, or a blockquote). A nil
-// field leaves the corresponding default untouched.
+// TextStyle overrides the font and spacing settings for one block kind:
+// a heading level, a paragraph, a code block, or a blockquote.
 type TextStyle struct {
 	FontSize     *float64
 	FontWeight   *string
@@ -54,8 +66,7 @@ type PageStyle struct {
 }
 
 // toStyleOverride translates the public Style into the internal override
-// structure the pipeline accepts. Only the pointer fields are copied, never
-// the internal type itself.
+// structure the pipeline accepts.
 func toStyleOverride(s Style) *engine.StyleOverride {
 	return &engine.StyleOverride{
 		Heading1:   toPartialTextStyle(s.Heading1),

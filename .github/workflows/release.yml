@@ -1,13 +1,36 @@
 name: Release
 
+# Gated on CI, not on the tag push directly: this workflow only starts once
+# .github/workflows/ci.yml has completed for the exact commit a tag points
+# at. CI's own push trigger covers both branches: ["main"] and
+# tags: ["v*"], so a pushed tag produces its own CI run against that exact
+# commit, which is what this workflow waits for and checks below. This
+# closes the gap that let v1.1.1 and v1.2.0 ship with a failing test: there
+# was previously no relationship at all between this workflow and CI's
+# result.
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
 
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
+
+    # Only proceed if the CI run that just completed (a) succeeded and
+    # (b) was triggered by a tag push, not an ordinary push to main or a
+    # pull request. GitHub documents workflow_run's head_branch as carrying
+    # the tag name itself for a tag-triggered run, not the branch the tag
+    # happens to sit on, so this is a reliable discriminator. It is safe
+    # specifically because CI's push trigger is scoped to exactly
+    # branches: ["main"] and tags: ["v*"]: those are the only two values
+    # head_branch can ever hold here, and "main" does not start with "v".
+    # If CI's trigger scope ever grows to include other branches, this
+    # condition needs revisiting.
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      startsWith(github.event.workflow_run.head_branch, 'v')
 
     # The default workflow token is read-only, which makes creating the
     # release itself fail with 403. Only contents needs elevating; pushing
@@ -18,10 +41,13 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
+          # Check out the exact commit CI just verified, not whatever HEAD
+          # of the default branch happens to be when this job starts.
+          ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 0
 
       # go.mod declares 1.25 as the minimum supported Go version, but
-      # released binaries are built here, not just verified — so this uses
+      # released binaries are built here, not just verified, so this uses
       # "stable" rather than pinning to that minimum. The standard library
       # itself ships security fixes per patch release; building the actual
       # release artifacts with the current Go keeps them off a known-vulnerable
@@ -34,11 +60,11 @@ jobs:
       - uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
         with:
           distribution: goreleaser
-          version: latest
+          version: "v2.18.2"
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # HOMEBREW_TAP_TOKEN must exist in this repository's secrets and
-          # must have write access to annavetech/homebrew-annave — it is
+          # must have write access to annavetech/homebrew-annave. It is
           # what lets GoReleaser push the updated formula to that tap repo.
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}

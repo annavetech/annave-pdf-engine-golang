@@ -19,16 +19,18 @@ import (
 )
 
 var (
-	convertOutput string
-	convertFormat string
-	convertStdin  bool
-	convertStyle  string
+	convertOutput     string
+	convertFormat     string
+	convertStdin      bool
+	convertStyle      string
+	convertStyleFile  string
+	convertLimitsFile string
 )
 
 var pdfConvertCmd = &cobra.Command{
 	Use:   "convert [file]",
 	Short: "Convert a document to PDF",
-	Long: `Convert a document to PDF without starting an HTTP server.
+	Long: `Convert a document to PDF.
 
 Reads from a file argument, or from stdin with --stdin.
 Writes to the path given by --output, or to stdout if --output is omitted.
@@ -80,17 +82,28 @@ Examples:
 			format = parser.FormatAuto
 		}
 
-		var runOpts []engine.RunOption
+		var configOpts []engine.ConfigOption
+		if convertStyleFile != "" {
+			configOpts = append(configOpts, engine.WithStyleFile(convertStyleFile))
+		}
+		if convertLimitsFile != "" {
+			configOpts = append(configOpts, engine.WithLimitsFile(convertLimitsFile))
+		}
 		if convertStyle != "" {
 			var override engine.StyleOverride
 			if err := json.Unmarshal([]byte(convertStyle), &override); err != nil {
 				return fmt.Errorf("invalid --style JSON: %w", err)
 			}
-			runOpts = append(runOpts, engine.WithStyleOverride(&override))
+			configOpts = append(configOpts, engine.WithStyleOverride(&override))
 		}
 
-		pipe := engine.NewPipeline()
-		pdfBytes, err := pipe.Run(string(input), format, runOpts...)
+		cfg, err := engine.LoadConfig(configOpts...)
+		if err != nil {
+			return fmt.Errorf("loading configuration: %w", err)
+		}
+
+		pipe := engine.NewPipeline(cfg)
+		pdfBytes, err := pipe.Run(string(input), format)
 		if err != nil {
 			if ae, ok := err.(*engine.AnnaveError); ok {
 				return fmt.Errorf("%s: %s", ae.Code, ae.Message)
@@ -117,4 +130,6 @@ func init() {
 	pdfConvertCmd.Flags().StringVarP(&convertFormat, "format", "f", "", "Input format: md, html, docx, csv, json, yaml, xml, rst, ipynb, png, jpg, gif, webp, txt (default: auto)")
 	pdfConvertCmd.Flags().BoolVar(&convertStdin, "stdin", false, "Read input from stdin instead of a file")
 	pdfConvertCmd.Flags().StringVar(&convertStyle, "style", "", `Per-document style override as JSON, e.g. '{"paragraph":{"fontSize":14}}'`)
+	pdfConvertCmd.Flags().StringVar(&convertStyleFile, "style-file", "", "Path to a style.yaml file, replacing the built-in default")
+	pdfConvertCmd.Flags().StringVar(&convertLimitsFile, "limits-file", "", "Path to a limits.yaml file, replacing the built-in default")
 }

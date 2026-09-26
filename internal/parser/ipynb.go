@@ -13,9 +13,9 @@ import (
 
 type IpynbParser struct{}
 
-func (p *IpynbParser) CanParse(input string) bool {
+func (p *IpynbParser) CanParse(input []byte) bool {
 	var obj map[string]interface{}
-	if err := json.Unmarshal([]byte(input), &obj); err != nil {
+	if err := json.Unmarshal(input, &obj); err != nil {
 		return false
 	}
 	_, hasCells := obj["cells"]
@@ -23,7 +23,7 @@ func (p *IpynbParser) CanParse(input string) bool {
 	return hasCells || hasNbformat
 }
 
-func (p *IpynbParser) Parse(input string) (*ast.DocumentNode, error) {
+func (p *IpynbParser) Parse(input []byte) (*ast.DocumentNode, error) {
 	var nb struct {
 		Metadata *struct {
 			Kernelspec *struct {
@@ -48,7 +48,7 @@ func (p *IpynbParser) Parse(input string) (*ast.DocumentNode, error) {
 		} `json:"cells"`
 	}
 
-	if err := json.Unmarshal([]byte(input), &nb); err != nil {
+	if err := json.Unmarshal(input, &nb); err != nil {
 		return &ast.DocumentNode{Type: ast.TypeDocument}, nil
 	}
 
@@ -68,7 +68,7 @@ func (p *IpynbParser) Parse(input string) (*ast.DocumentNode, error) {
 
 		switch cell.CellType {
 		case "markdown":
-			doc, _ := (&MdParser{}).Parse(src)
+			doc, _ := (&MdParser{}).Parse([]byte(src))
 			children = append(children, doc.Children...)
 
 		case "code":
@@ -102,7 +102,7 @@ func (p *IpynbParser) Parse(input string) (*ast.DocumentNode, error) {
 
 		case "raw":
 			if src != "" {
-				doc, _ := (&MdParser{}).Parse(src)
+				doc, _ := (&MdParser{}).Parse([]byte(src))
 				children = append(children, doc.Children...)
 			}
 		}

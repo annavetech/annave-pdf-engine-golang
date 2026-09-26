@@ -5,6 +5,7 @@
 package parser
 
 import (
+	"bytes"
 	"encoding/json"
 	"strings"
 
@@ -13,14 +14,14 @@ import (
 
 type JsonParser struct{}
 
-func (p *JsonParser) CanParse(input string) bool {
-	t := strings.TrimSpace(input)
-	return strings.HasPrefix(t, "{") || strings.HasPrefix(t, "[")
+func (p *JsonParser) CanParse(input []byte) bool {
+	t := bytes.TrimSpace(input)
+	return bytes.HasPrefix(t, []byte("{")) || bytes.HasPrefix(t, []byte("["))
 }
 
-func (p *JsonParser) Parse(input string) (*ast.DocumentNode, error) {
+func (p *JsonParser) Parse(input []byte) (*ast.DocumentNode, error) {
 	var raw interface{}
-	if err := json.Unmarshal([]byte(input), &raw); err != nil {
+	if err := json.Unmarshal(input, &raw); err != nil {
 		return &ast.DocumentNode{Type: ast.TypeDocument}, nil
 	}
 	return normalizeJSON(raw), nil

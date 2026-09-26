@@ -3,6 +3,7 @@ name: CI
 on:
   push:
     branches: ["main"]
+    tags: ["v*"]
   pull_request:
     branches: ["main"]
 
@@ -15,27 +16,33 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # go.mod declares the minimum supported Go version (1.25); this leg
-        # verifies that compatibility promise against downstream importers.
-        # The "stable" leg proves the module also builds cleanly on the
-        # current Go release, which is what the release workflow actually
-        # ships binaries with — the standard library itself carries fixed
-        # vulnerabilities per release, so pinning this matrix to a single
-        # old toolchain would silently let released binaries fall behind.
-        go-version: ["1.25", "stable"]
+        # The floor leg reads go.mod's own `go` directive via
+        # actions/setup-go's go-version-file input, instead of restating the
+        # minimum supported version as a second literal here: go.mod is the
+        # single source of truth for the floor, and this leg can never drift
+        # out of step with it. The stable leg tracks whatever Go currently
+        # ships as latest, which is what release.yml actually builds release
+        # binaries with. The standard library itself carries fixed
+        # vulnerabilities per release, so pinning this leg to a single old
+        # toolchain would silently let released binaries fall behind.
+        include:
+          - leg: floor
+            go-version: ""
+            go-version-file: go.mod
+          - leg: stable
+            go-version: "stable"
+            go-version-file: ""
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - uses: actions/setup-go@3041bf56c941b39c61721a86cd11f3bb1338122a # v5.2.0
         with:
           go-version: ${{ matrix.go-version }}
+          go-version-file: ${{ matrix.go-version-file }}
 
       - run: go build ./...
       - run: go vet ./...
 
-      # internal/api includes a deliberate 61-second sleep inside the
-      # rate-limit window test; this step is not given a timeout so that
-      # test is never cut off.
       - run: go test ./... -race
 
       - name: gofmt
@@ -45,3 +52,28 @@ jobs:
             echo "$unformatted"
             exit 1
           fi
+
+  lint-and-vuln:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-go@3041bf56c941b39c61721a86cd11f3bb1338122a # v5.2.0
+        with:
+          go-version: "stable"
+
+      # Pinned to an exact release, same discipline as every other tool
+      # version in this repo (see go.mod's `go` directive and
+      # .goreleaser.yaml's GoReleaser pin in release.yml). golangci-lint
+      # stays on its 1.x line here because .golangci.yml is written against
+      # the 1.x config schema; migrating to golangci-lint 2.x's breaking
+      # config format is a separate decision, not part of this gate.
+      - name: golangci-lint
+        run: go run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8 run ./...
+
+      # Pinned to an exact release for the same reason. govulncheck's result
+      # depends on the standard library shipped by the Go toolchain it runs
+      # under as much as on this module's own dependencies, so this runs
+      # under the same "stable" toolchain release.yml builds with.
+      - name: govulncheck
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...

@@ -50,12 +50,12 @@ var (
 
 type MdParser struct{}
 
-func (p *MdParser) CanParse(input string) bool {
-	return mdHasHeading.MatchString(input)
+func (p *MdParser) CanParse(input []byte) bool {
+	return mdHasHeading.Match(input)
 }
 
-func (p *MdParser) Parse(input string) (*ast.DocumentNode, error) {
-	lines := strings.Split(input, "\n")
+func (p *MdParser) Parse(input []byte) (*ast.DocumentNode, error) {
+	lines := strings.Split(string(input), "\n")
 	var children []ast.Node
 	i := 0
 
@@ -309,7 +309,7 @@ func ParseInline(raw string) []ast.InlineSpan {
 			s = s[len(m[0]):]
 			continue
 		}
-		// Plain text — advance to next marker
+		// Plain text: advance to next marker
 		nextIdx := strings.IndexAny(s, "*_`~[")
 		if nextIdx == 0 {
 			appendText(string(s[0]))

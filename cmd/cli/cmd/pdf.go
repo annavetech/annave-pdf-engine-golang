@@ -9,10 +9,9 @@ import "github.com/spf13/cobra"
 var pdfCmd = &cobra.Command{
 	Use:   "pdf",
 	Short: "PDF conversion tools",
-	Long:  "Convert documents to PDF and serve the conversion API.",
+	Long:  "Convert documents to PDF.",
 }
 
 func init() {
 	pdfCmd.AddCommand(pdfConvertCmd)
-	pdfCmd.AddCommand(pdfServeCmd)
 }

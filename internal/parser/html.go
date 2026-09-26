@@ -5,6 +5,7 @@
 package parser
 
 import (
+	"bytes"
 	"regexp"
 	"strings"
 
@@ -19,12 +20,12 @@ var (
 
 type HtmlParser struct{}
 
-func (p *HtmlParser) CanParse(input string) bool {
-	return htmlTagRe.MatchString(input)
+func (p *HtmlParser) CanParse(input []byte) bool {
+	return htmlTagRe.Match(input)
 }
 
-func (p *HtmlParser) Parse(input string) (*ast.DocumentNode, error) {
-	doc, err := html.Parse(strings.NewReader(input))
+func (p *HtmlParser) Parse(input []byte) (*ast.DocumentNode, error) {
+	doc, err := html.Parse(bytes.NewReader(input))
 	if err != nil {
 		return &ast.DocumentNode{Type: ast.TypeDocument}, nil
 	}
@@ -181,7 +182,7 @@ func walkHTMLBlock(n *html.Node, out *[]ast.Node, inBlockquote, inPre bool) {
 			}
 
 		default:
-			// div, section, etc — recurse
+			// div, section, etc: recurse
 			if blockTags[tag] || tag == "div" || tag == "section" || tag == "article" {
 				walkHTMLBlock(c, out, false, false)
 			}
