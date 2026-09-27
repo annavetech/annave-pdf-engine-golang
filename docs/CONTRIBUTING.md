@@ -82,7 +82,7 @@ of a normal `go test ./...`.
   ```
 - Comments only when the reason is non-obvious: not what the code does, but why it does it that way.
 - No `_test.go` file uses mocks for the database or filesystem. The pipeline tests call `Pipeline.Run` directly. No fakes for the PDF renderer: tests assert on the error return, not the PDF content.
-- CI requires `gofmt`, `go vet ./...`, `golangci-lint` v1.64.8, `govulncheck` v1.8.0, and `go test ./... -race` to all pass. Run the linter and vuln check locally with the same pinned versions CI uses: `go run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8 run ./...` and `go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...`.
+- CI requires `gofmt`, `go vet ./...`, `golangci-lint` v2.14.0, `govulncheck` v1.8.0, and `go test ./... -race` to all pass. Run the linter locally with the same pinned version CI uses: `go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.14.0 run ./...`. Run the vuln check with `go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...`.
 - Error codes must be added to `config/messages.yaml` before they are used in Go code. Do not hardcode message strings in `.go` files.
 
 ---

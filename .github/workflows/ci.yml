@@ -3,9 +3,9 @@ name: CI
 on:
   push:
     branches: ["main"]
-    tags: ["v*"]
   pull_request:
     branches: ["main"]
+  workflow_call:
 
 permissions:
   contents: read
@@ -16,15 +16,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The floor leg reads go.mod's own `go` directive via
-        # actions/setup-go's go-version-file input, instead of restating the
-        # minimum supported version as a second literal here: go.mod is the
-        # single source of truth for the floor, and this leg can never drift
-        # out of step with it. The stable leg tracks whatever Go currently
-        # ships as latest, which is what release.yml actually builds release
-        # binaries with. The standard library itself carries fixed
-        # vulnerabilities per release, so pinning this leg to a single old
-        # toolchain would silently let released binaries fall behind.
+        # Floor leg reads go.mod's `go` directive so it never drifts from it.
+        # Stable leg tracks current Go, matching what release.yml builds with.
         include:
           - leg: floor
             go-version: ""
@@ -62,18 +55,12 @@ jobs:
         with:
           go-version: "stable"
 
-      # Pinned to an exact release, same discipline as every other tool
-      # version in this repo (see go.mod's `go` directive and
-      # .goreleaser.yaml's GoReleaser pin in release.yml). golangci-lint
-      # stays on its 1.x line here because .golangci.yml is written against
-      # the 1.x config schema; migrating to golangci-lint 2.x's breaking
-      # config format is a separate decision, not part of this gate.
-      - name: golangci-lint
-        run: go run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8 run ./...
+      # Official action so findings show on the PR diff; config is .golangci.yml (v2).
+      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.14.0
 
-      # Pinned to an exact release for the same reason. govulncheck's result
-      # depends on the standard library shipped by the Go toolchain it runs
-      # under as much as on this module's own dependencies, so this runs
-      # under the same "stable" toolchain release.yml builds with.
+      # Pinned like above: govulncheck's result depends on the toolchain's
+      # standard library as much as this module's deps, so it runs under "stable".
       - name: govulncheck
         run: go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...

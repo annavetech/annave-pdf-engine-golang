@@ -29,10 +29,10 @@ func buildDocxWithImages(t testing.TB, imageSizes []int) []byte {
 	for i := range imageSizes {
 		rID := fmt.Sprintf("rId%d", i+1)
 		mediaName := fmt.Sprintf("media/image%d.bin", i+1)
-		paras.WriteString(fmt.Sprintf(`<w:p><w:drawing><blip embed=%q/></w:drawing></w:p>`, rID))
-		rels.WriteString(fmt.Sprintf(
+		fmt.Fprintf(&paras, `<w:p><w:drawing><blip embed=%q/></w:drawing></w:p>`, rID)
+		fmt.Fprintf(&rels,
 			`<Relationship Id=%q Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target=%q/>`,
-			rID, mediaName))
+			rID, mediaName)
 	}
 	rels.WriteString(`</Relationships>`)
 

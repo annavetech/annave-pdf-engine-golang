@@ -39,7 +39,7 @@ func TestPipeline_Run_GoldenPDFMatchesFixture(t *testing.T) {
 	}
 
 	if os.Getenv("UPDATE_GOLDEN") == "1" {
-		if err := os.WriteFile(goldenPdfPath, got, 0o600); err != nil {
+		if err := os.WriteFile(goldenPdfPath, got, 0o600); err != nil { //nolint:gosec // both paths are fixed testdata constants, not a traversal risk
 			t.Fatalf("write golden file: %v", err)
 		}
 		t.Logf("updated %s (%d bytes); review the diff before committing", goldenPdfPath, len(got))
