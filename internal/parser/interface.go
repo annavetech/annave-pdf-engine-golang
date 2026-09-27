@@ -4,7 +4,7 @@
 
 package parser
 
-import "github.com/annavetech/annave-pdf-engine-golang/internal/ast"
+import "github.com/annavetech/pdfengine/internal/ast"
 
 // Parser recognizes and parses raw document bytes into an AST.
 type Parser interface {

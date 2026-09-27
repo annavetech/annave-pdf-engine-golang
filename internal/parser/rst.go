@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/annavetech/annave-pdf-engine-golang/internal/ast"
+	"github.com/annavetech/pdfengine/internal/ast"
 )
 
 var adornmentChars = map[byte]bool{'=': true, '-': true, '~': true, '^': true, '"': true, '\'': true, '#': true, '*': true, '+': true, '_': true}

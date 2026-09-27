@@ -10,7 +10,7 @@ import (
 	"regexp"
 	"strings"
 
-	engineconfig "github.com/annavetech/annave-pdf-engine-golang/config"
+	engineconfig "github.com/annavetech/pdfengine/config"
 	"gopkg.in/yaml.v3"
 )
 

@@ -8,7 +8,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/annavetech/annave-pdf-engine-golang/internal/engine"
+	"github.com/annavetech/pdfengine/internal/engine"
 )
 
 // Engine converts documents to PDF. Create one with New and reuse it across

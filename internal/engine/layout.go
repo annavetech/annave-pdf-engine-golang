@@ -8,10 +8,10 @@ import (
 	"math"
 	"strings"
 
-	"github.com/annavetech/annave-pdf-engine-golang/internal/ast"
+	"github.com/annavetech/pdfengine/internal/ast"
 )
 
-// Layout constants — must match paginator.go
+// Layout constants: must match paginator.go
 const (
 	listItemGap       = 4
 	tableRowH         = 26

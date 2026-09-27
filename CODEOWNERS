@@ -1,6 +1,30 @@
-# CODEOWNERS
-#
-# Every file in this repository defaults to the owner below. Add more
-# specific rules underneath as the repository grows.
+# CODEOWNERS: reviewed by GitHub on every PR that touches a matched path.
+# Auto-requests review only. It does not gate merge, because a solo maintainer
+# cannot review their own PR, so this is never turned into a required review.
 
+# Default owner for anything not matched below.
 * @annaveretennykova
+
+# Input parsers, one file per format.
+/internal/parser/ @annaveretennykova
+
+# Engine pipeline, AST, and the document schema it mirrors.
+/internal/engine/ @annaveretennykova
+/internal/ast/ @annaveretennykova
+/schema/ @annaveretennykova
+
+# The annave CLI and the debug tool.
+/cmd/ @annaveretennykova
+
+# Style, limits, and message config.
+/config/ @annaveretennykova
+
+# Docs and onboarding.
+/docs/ @annaveretennykova
+*.md @annaveretennykova
+
+# Repo automation.
+/.github/ @annaveretennykova
+
+# Claude Code plugin (area/plugin). Folder does not exist yet.
+/plugin/ @annaveretennykova

@@ -1,4 +1,4 @@
-module github.com/annavetech/annave-pdf-engine-golang
+module github.com/annavetech/pdfengine
 
 go 1.25.0
 

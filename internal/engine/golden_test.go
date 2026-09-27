@@ -14,7 +14,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/annavetech/annave-pdf-engine-golang/internal/parser"
+	"github.com/annavetech/pdfengine/internal/parser"
 )
 
 // goldenMdPath and goldenPdfPath are the fixture and the committed reference

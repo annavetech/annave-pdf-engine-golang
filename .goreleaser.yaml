@@ -63,4 +63,4 @@ homebrew_casks:
 release:
   github:
     owner: annavetech
-    name: annave-pdf-engine-golang
+    name: pdfengine

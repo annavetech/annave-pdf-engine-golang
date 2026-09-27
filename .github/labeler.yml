@@ -1,0 +1,27 @@
+area/parser:
+  - changed-files:
+      - any-glob-to-any-file: ["internal/parser/**"]
+
+area/engine:
+  - changed-files:
+      - any-glob-to-any-file: ["internal/engine/**", "internal/ast/**", "schema/**", "*.go"]
+
+area/cli:
+  - changed-files:
+      - any-glob-to-any-file: ["cmd/**"]
+
+area/config:
+  - changed-files:
+      - any-glob-to-any-file: ["config/**"]
+
+area/ci:
+  - changed-files:
+      - any-glob-to-any-file: [".github/**", ".goreleaser.yaml", ".golangci.yml", "cliff.toml"]
+
+area/docs:
+  - changed-files:
+      - any-glob-to-any-file: ["docs/**", "*.md", "assets/**", "LICENSE", "NOTICE"]
+
+area/plugin:
+  - changed-files:
+      - any-glob-to-any-file: ["plugin/**"]

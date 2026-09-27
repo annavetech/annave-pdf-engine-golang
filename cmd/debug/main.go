@@ -9,8 +9,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/annavetech/annave-pdf-engine-golang/internal/engine"
-	"github.com/annavetech/annave-pdf-engine-golang/internal/parser"
+	"github.com/annavetech/pdfengine/internal/engine"
+	"github.com/annavetech/pdfengine/internal/parser"
 )
 
 func main() {

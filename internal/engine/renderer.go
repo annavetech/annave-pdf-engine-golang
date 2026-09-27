@@ -44,7 +44,7 @@ func NewRenderer() (*Renderer, error) {
 	})
 
 	// gopdf assigns PDF object numbers in font registration order, so this
-	// order must be fixed rather than ranged over a map — otherwise the
+	// order must be fixed rather than ranged over a map: otherwise the
 	// same document renders to different bytes on every run.
 	fonts := []struct{ name, path string }{
 		{fnInterRegular, "fonts/Inter-Regular.ttf"},

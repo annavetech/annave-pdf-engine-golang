@@ -4,7 +4,7 @@
 
 package main
 
-import "github.com/annavetech/annave-pdf-engine-golang/cmd/cli/cmd"
+import "github.com/annavetech/pdfengine/cmd/cli/cmd"
 
 func main() {
 	cmd.Execute()
