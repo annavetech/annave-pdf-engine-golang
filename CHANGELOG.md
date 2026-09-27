@@ -7,12 +7,19 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+---
+
+## [1.3.0] - 2026-09-27
+
+Upgrading from 1.2.0 requires three changes: the import path is now `github.com/annavetech/pdfengine`, call sites must be adapted to the new `Convert` and `New` signatures described below, and the minimum Go version is 1.26.
+
 ### Changed
 - **Breaking:** `Engine.Convert` now takes a `context.Context` and `[]byte` instead of a bare `string`, and drops its per-call `Option` parameter: `func (e *Engine) Convert(ctx context.Context, data []byte, f Format) ([]byte, error)`. `New` now takes the configuration options instead: `func New(opts ...Option) (*Engine, error)`. `New` is fallible (a caller-supplied config file can fail to load or fail validation), so it returns an error instead of the previous panic-free-but-unconfigurable constructor. Every call site (the CLI, the tests, the documentation examples) is updated to the new shape.
 - Style and limits are now genuinely per-`Engine`: `pdfengine.New(pdfengine.WithStyleFile(path))` and `pdfengine.New(pdfengine.WithLimitsFile(path))` replace the embedded `config/style.yaml`/`config/limits.yaml` for that `Engine` only, without a rebuild. Two `Engine` values built with different options hold independent configuration in the same process. The library itself never scans a filesystem or reads an environment variable for this: a path is read only when one of these options names it explicitly. `annave pdf convert` gains matching `--style-file`/`--limits-file` flags.
 - `README.md`, `docs/ARCHITECTURE.md`, `docs/CONFIGURATION.md`, `docs/CONTRIBUTING.md`, `docs/ERROR_CODES.md`, `docs/USE_CASES.md`, and `docs/WHITEPAPER.md` are updated for the new `Convert`/`New` signatures and to describe the real architecture (see "Removed" below) instead of the ports-and-adapters framing.
 - **Breaking (CLI):** `annave pdf convert --format <value>` now rejects a format it doesn't recognise instead of silently falling back to auto-detection. A typo in `--format` used to produce a document parsed under a guess nobody asked for; it now fails with a clear error naming the rejected format.
 - Module path is now `github.com/annavetech/pdfengine`, was `github.com/annavetech/annave-pdf-engine-golang`. The GitHub repository is renamed to match: `annavetech/pdfengine`. Existing tags `v1.1.0` through `v1.2.0` keep resolving under the old import path, through GitHub's rename redirect and those tags' own committed `go.mod` still declaring the old path; only the next tagged release resolves under the new one.
+- `schema/document.v1.schema.json`'s `$id` is now `https://www.annave.tech/pdfengine/schema/document.v1`, matching the renamed repository; it was `https://www.annave.tech/pdf-engine/schema/document.v1`.
 - Minimum Go version is now 1.26, raised from 1.25. `golang.org/x/image` v0.46.0 and `golang.org/x/net` v0.59.0 both declare `go 1.26.0`; the bump is routine dependency currency, not vulnerability-driven. `github.com/signintech/gopdf` is also bumped to v0.38.1, which now always emits an explicit `Ts` (text rise) operator per text run, `0` for non-super/subscript text; `internal/engine/testdata/golden.pdf` is regenerated to match the new byte-identical-in-substance output (rasterised pages are pixel-identical to the previous fixture).
 
 ### Fixed
