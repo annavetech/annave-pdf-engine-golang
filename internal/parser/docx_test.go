@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/annavetech/annave-pdf-engine-golang/internal/ast"
+	"github.com/annavetech/pdfengine/internal/ast"
 )
 
 // buildDocxWithImages returns a minimal, valid .docx archive containing one

@@ -113,7 +113,7 @@ type Node struct {
 	NaturalHeight float64 `json:"naturalHeight,omitempty"`
 
 	// Data holds in-memory binary payload (e.g. image bytes from a file upload).
-	// Never JSON-serialised — only set by binary-format parsers at runtime.
+	// Never JSON-serialised; only set by binary-format parsers at runtime.
 	Data []byte `json:"-"`
 }
 

@@ -4,7 +4,7 @@
 
 package pdfengine
 
-import "github.com/annavetech/annave-pdf-engine-golang/internal/engine"
+import "github.com/annavetech/pdfengine/internal/engine"
 
 // Option configures an Engine at construction, in New. Options apply once,
 // when the Engine is built; there is no per-Convert-call configuration.

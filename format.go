@@ -4,7 +4,7 @@
 
 package pdfengine
 
-import "github.com/annavetech/annave-pdf-engine-golang/internal/parser"
+import "github.com/annavetech/pdfengine/internal/parser"
 
 // Format selects which parser converts the input, or requests
 // auto-detection.
@@ -55,7 +55,7 @@ const (
 	FormatNotebook Format = "ipynb"
 
 	// FormatWord parses Word documents: headings, paragraphs, lists, and
-	// tables. Pure Go — no external converter is invoked. Extension:
+	// tables. Pure Go, no external converter is invoked. Extension:
 	// .docx
 	FormatWord Format = "docx"
 

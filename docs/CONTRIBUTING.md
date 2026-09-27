@@ -14,8 +14,8 @@ updated:     2026-08-23
 ## Setup
 
 ```bash
-git clone https://github.com/annavetech/annave-pdf-engine-golang.git
-cd annave-pdf-engine-golang
+git clone https://github.com/annavetech/pdfengine.git
+cd pdfengine
 
 # Build
 go build ./cmd/cli

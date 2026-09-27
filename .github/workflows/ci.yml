@@ -64,3 +64,18 @@ jobs:
       # standard library as much as this module's deps, so it runs under "stable".
       - name: govulncheck
         run: go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
+
+  python-automation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r .github/scripts/requirements.txt
+
+      - run: ruff check .github/scripts
+
+      - run: python3 .github/scripts/tests/run_tests.py

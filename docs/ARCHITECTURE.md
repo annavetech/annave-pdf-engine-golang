@@ -164,7 +164,7 @@ The AST has no dependencies on other internal packages; it is the shared data ty
 ## Package map
 
 ```
-github.com/annavetech/annave-pdf-engine-golang/
+github.com/annavetech/pdfengine/
 ├── cmd/
 │   └── cli/             : cobra CLI entry point
 ├── config/              : Go package; embeds and exports all YAML bytes
@@ -184,7 +184,7 @@ github.com/annavetech/annave-pdf-engine-golang/
 ```go
 package parser
 
-import "github.com/annavetech/annave-pdf-engine-golang/internal/ast"
+import "github.com/annavetech/pdfengine/internal/ast"
 
 type YourParser struct{}
 

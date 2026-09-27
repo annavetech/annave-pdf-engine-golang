@@ -16,7 +16,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	pdfengine "github.com/annavetech/annave-pdf-engine-golang"
+	pdfengine "github.com/annavetech/pdfengine"
 )
 
 // mustNewEngine builds an Engine with opts, failing the test immediately on

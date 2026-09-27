@@ -10,13 +10,13 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/annavetech/annave-pdf-engine-golang/internal/engine"
+	"github.com/annavetech/pdfengine/internal/engine"
 )
 
 var rootCmd = &cobra.Command{
 	Use:   "annave",
 	Short: "ANNÁVE TECH developer tools",
-	Long:  "ANNÁVE TECH — developer tools by Anna Veretennykova (www.annave.tech)",
+	Long:  "ANNÁVE TECH: developer tools by Anna Veretennykova (www.annave.tech)",
 }
 
 var versionCmd = &cobra.Command{

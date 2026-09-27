@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/annavetech/pdfengine/security/advisories/new
+    about: Do not open a public issue for security reports.
+  - name: Ask a question about contributing
+    url: https://github.com/annavetech/pdfengine/blob/main/docs/CONTRIBUTING.md
+    about: General questions about the contribution process.

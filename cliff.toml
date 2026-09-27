@@ -1,4 +1,4 @@
-# git-cliff configuration — Conventional Commits, feeds CHANGELOG.md.
+# git-cliff configuration: Conventional Commits, feeds CHANGELOG.md.
 # No repo-specific values: git-cliff resolves the remote from the local git config, so this
 # file is identical across every repo and is not a template.
 

@@ -12,7 +12,7 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 
-	"github.com/annavetech/annave-pdf-engine-golang/internal/ast"
+	"github.com/annavetech/pdfengine/internal/ast"
 	_ "golang.org/x/image/webp"
 )
 

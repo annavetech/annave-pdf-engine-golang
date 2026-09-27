@@ -12,7 +12,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/annavetech/annave-pdf-engine-golang/internal/ast"
+	"github.com/annavetech/pdfengine/internal/ast"
 )
 
 // DocxParser parses Microsoft Word (.docx) files.

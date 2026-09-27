@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/annavetech/annave-pdf-engine-golang/internal/engine"
+	"github.com/annavetech/pdfengine/internal/engine"
 )
 
 // Stage identifies which part of the conversion pipeline produced an Error.
@@ -25,7 +25,7 @@ const (
 
 // Error describes a failure returned by Convert. Code is a stable,
 // machine-readable identifier (for example "ENGINE_ERR_FILE_TOO_LARGE").
-// Message is human-readable and may change between versions — branch on
+// Message is human-readable and may change between versions: branch on
 // Code, not on Message. Use errors.As to obtain an *Error from an error
 // returned by Convert.
 type Error struct {

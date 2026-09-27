@@ -28,7 +28,7 @@ The `annave` CLI converts documents to PDF without running a server.
 
 ```bash
 # Go: works today
-go install github.com/annavetech/annave-pdf-engine-golang/cmd/cli@latest
+go install github.com/annavetech/pdfengine/cmd/cli@latest
 
 # Homebrew (macOS, Linux): once a tagged release exists
 brew tap annavetech/annave
@@ -47,11 +47,11 @@ The engine is also a Go module, for services that want to convert documents
 in-process:
 
 ```bash
-go get github.com/annavetech/annave-pdf-engine-golang
+go get github.com/annavetech/pdfengine
 ```
 
 ```go
-import "github.com/annavetech/annave-pdf-engine-golang"
+import "github.com/annavetech/pdfengine"
 
 e, err := pdfengine.New()
 if err != nil {
