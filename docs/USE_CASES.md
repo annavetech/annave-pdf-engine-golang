@@ -4,7 +4,7 @@ description: Seven practical use cases with real library and CLI examples.
              No marketing language, just what works and what to watch for.
 author:      Anna Veretennykova
 website:     www.annave.tech
-version:     1.2.0
+version:     1.3.0
 created:     2026-05-06
 updated:     2026-08-23
 -->
