@@ -11,7 +11,7 @@ updated:     2026-08-23
 
 # Dependencies
 
-Go version: **1.25** (minimum). The engine uses `log/slog` (added in 1.21); the 1.25 floor itself comes from `golang.org/x/image` v0.45.0, which is required to clear a reachable memory-allocation vulnerability (GO-2026-6222) and declares `go 1.25.0`.
+Go version: **1.26** (minimum). The engine uses `log/slog` (added in 1.21); the 1.26 floor comes from `golang.org/x/image` v0.46.0 and `golang.org/x/net` v0.59.0, both of which declare `go 1.26.0`. Neither bump is vulnerability-driven; it is the routine cost of staying current on those modules.
 
 All dependencies are listed in `go.mod`. Run `go mod verify` to confirm checksums match `go.sum`.
 
