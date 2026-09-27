@@ -9,7 +9,7 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [1.3.0] - 2026-09-27
+## [1.3.1] - 2026-09-27
 
 Upgrading from 1.2.0 requires three changes: the import path is now `github.com/annavetech/pdfengine`, call sites must be adapted to the new `Convert` and `New` signatures described below, and the minimum Go version is 1.26.
 
