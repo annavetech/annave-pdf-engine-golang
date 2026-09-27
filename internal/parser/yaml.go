@@ -5,6 +5,7 @@
 package parser
 
 import (
+	"bytes"
 	"regexp"
 	"strings"
 
@@ -18,15 +19,15 @@ var (
 
 type YamlParser struct{}
 
-func (p *YamlParser) CanParse(input string) bool {
-	t := strings.TrimSpace(input)
-	return strings.HasPrefix(t, "---") ||
-		yamlKeyValue.MatchString(t) ||
-		yamlTopList.MatchString(t)
+func (p *YamlParser) CanParse(input []byte) bool {
+	t := bytes.TrimSpace(input)
+	return bytes.HasPrefix(t, []byte("---")) ||
+		yamlKeyValue.Match(t) ||
+		yamlTopList.Match(t)
 }
 
-func (p *YamlParser) Parse(input string) (*ast.DocumentNode, error) {
-	lines := stripYamlComments(strings.Split(input, "\n"))
+func (p *YamlParser) Parse(input []byte) (*ast.DocumentNode, error) {
+	lines := stripYamlComments(strings.Split(string(input), "\n"))
 	nodes := parseYamlBlock(lines, 0)
 	return &ast.DocumentNode{Type: ast.TypeDocument, Children: nodes}, nil
 }
@@ -113,7 +114,7 @@ func parseYamlBlock(lines []string, baseIndent int) []ast.Node {
 				continue
 			}
 
-			// Empty value — collect child lines
+			// Empty value: collect child lines
 			nodes = append(nodes, ast.Node{Type: ast.TypeHeading, Level: 2, Text: key, Spans: []ast.InlineSpan{{Kind: ast.SpanText, Text: key}}})
 			var childLines []string
 			j := i + 1

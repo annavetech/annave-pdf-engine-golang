@@ -6,7 +6,7 @@ package engine
 
 import "math"
 
-// Paginator constants — must match layout.go
+// Paginator constants; these must match layout.go.
 const (
 	minBottomSpace = 20
 	minOrphanLines = 2
@@ -55,7 +55,7 @@ func (pag *Paginator) Paginate(boxes []LayoutBox, page PageConfig) []Page {
 				pb.RowSlice = overrides.RowSlice
 			}
 			if overrides.HeightOverride != 0 {
-				pb.LayoutBox.Height = overrides.HeightOverride
+				pb.Height = overrides.HeightOverride
 			}
 		}
 		current.Boxes = append(current.Boxes, pb)

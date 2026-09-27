@@ -5,6 +5,7 @@
 package parser
 
 import (
+	"bytes"
 	"encoding/xml"
 	"strings"
 
@@ -13,13 +14,13 @@ import (
 
 type XmlParser struct{}
 
-func (p *XmlParser) CanParse(input string) bool {
-	t := strings.TrimSpace(input)
-	return (strings.HasPrefix(t, "<?xml") || (strings.HasPrefix(t, "<") && !strings.HasPrefix(t, "<!"))) &&
-		strings.Contains(t, ">")
+func (p *XmlParser) CanParse(input []byte) bool {
+	t := bytes.TrimSpace(input)
+	return (bytes.HasPrefix(t, []byte("<?xml")) || (bytes.HasPrefix(t, []byte("<")) && !bytes.HasPrefix(t, []byte("<!")))) &&
+		bytes.Contains(t, []byte(">"))
 }
 
-func (p *XmlParser) Parse(input string) (*ast.DocumentNode, error) {
+func (p *XmlParser) Parse(input []byte) (*ast.DocumentNode, error) {
 	root, err := parseXMLRoot(input)
 	if err != nil {
 		return fallbackDoc(input), nil
@@ -68,9 +69,9 @@ func (n *xmlNode) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	return nil
 }
 
-func parseXMLRoot(input string) (*xmlNode, error) {
+func parseXMLRoot(input []byte) (*xmlNode, error) {
 	var root xmlNode
-	if err := xml.Unmarshal([]byte(input), &root); err != nil {
+	if err := xml.Unmarshal(input, &root); err != nil {
 		return nil, err
 	}
 	return &root, nil
@@ -134,8 +135,8 @@ func xmlAttrsToTable(attrs []xml.Attr) *ast.Node {
 	return &n
 }
 
-func fallbackDoc(input string) *ast.DocumentNode {
-	t := strings.TrimSpace(input)
+func fallbackDoc(input []byte) *ast.DocumentNode {
+	t := string(bytes.TrimSpace(input))
 	return &ast.DocumentNode{
 		Type:     ast.TypeDocument,
 		Children: []ast.Node{{Type: ast.TypeParagraph, Text: t, Spans: []ast.InlineSpan{{Kind: ast.SpanText, Text: t}}}},

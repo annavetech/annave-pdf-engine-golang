@@ -25,46 +25,24 @@ const (
 )
 
 // TestPipeline_Run_GoldenPDFMatchesFixture renders testdata/golden.md and
-// compares the result against the committed testdata/golden.pdf. Font
-// registration order in NewRenderer used to depend on Go's randomised map
-// iteration, which made gopdf's object numbering non-deterministic; that was
-// fixed so this comparison is meaningful rather than flaky. A single wrong
-// character transcribed while hoisting a regex to package scope changes the
-// parsed AST and therefore the rendered bytes, which this test is built to
-// catch.
-//
-// The comparison runs on a normalised form rather than raw file bytes:
-// normalizePDF inflates each FlateDecode stream, since Go's compress/flate
-// output is not guaranteed byte-identical across Go releases even for
-// identical input, and drops the xref table and startxref value, since those
-// record physical byte offsets that shift whenever any stream's compressed
-// length does. Everything else — object structure, dictionary values,
-// decompressed stream content — is compared as-is.
-//
-// To intentionally update the golden file after a change that is meant to
-// alter output, run:
-//
-//	UPDATE_GOLDEN=1 go test ./internal/engine/ -run TestPipeline_Run_GoldenPDFMatchesFixture
-//
-// and commit the resulting testdata/golden.pdf. The env var guard means this
-// never happens as a side effect of a normal `go test ./...`.
+// compares the normalized result against the committed testdata/golden.pdf.
 func TestPipeline_Run_GoldenPDFMatchesFixture(t *testing.T) {
 	src, err := os.ReadFile(goldenMdPath)
 	if err != nil {
 		t.Fatalf("read fixture: %v", err)
 	}
 
-	p := NewPipeline()
+	p := NewPipeline(mustDefaultConfig(t))
 	got, err := p.Run(string(src), parser.FormatMd)
 	if err != nil {
 		t.Fatalf("pipeline.Run() error: %v", err)
 	}
 
 	if os.Getenv("UPDATE_GOLDEN") == "1" {
-		if err := os.WriteFile(goldenPdfPath, got, 0o644); err != nil {
+		if err := os.WriteFile(goldenPdfPath, got, 0o600); err != nil { //nolint:gosec // both paths are fixed testdata constants, not a traversal risk
 			t.Fatalf("write golden file: %v", err)
 		}
-		t.Logf("updated %s (%d bytes) — review the diff before committing", goldenPdfPath, len(got))
+		t.Logf("updated %s (%d bytes); review the diff before committing", goldenPdfPath, len(got))
 		return
 	}
 
@@ -91,20 +69,12 @@ func TestPipeline_Run_GoldenPDFMatchesFixture(t *testing.T) {
 // to split a PDF file's body into per-object chunks.
 var pdfObjectRe = regexp.MustCompile(`(?s)\d+ \d+ obj\r?\n`)
 
-// pdfLengthRe matches a stream dictionary's /Length entry with its numeric
-// value, which normalizePDF blanks out since it is a byproduct of
-// compression rather than content.
+// pdfLengthRe matches a stream dictionary's /Length entry, which
+// normalizePDF blanks out.
 var pdfLengthRe = regexp.MustCompile(`/Length\s+(\d+)`)
 
 // normalizePDF returns a toolchain-independent representation of a rendered
-// PDF suitable for comparing against the golden fixture: every FlateDecode
-// stream is inflated so that two differently-compressed encodings of the
-// same content compare equal, and the xref table plus the startxref value
-// are dropped, since both record physical byte offsets that shift whenever
-// any stream's compressed length changes and carry no rendering
-// information. Everything else in the file — object numbering, dictionary
-// keys and values, decompressed stream bytes, non-flate stream bytes — is
-// preserved, so a change to rendered content still produces a divergence.
+// PDF: FlateDecode streams are inflated, and the xref table is dropped.
 func normalizePDF(data []byte) ([]byte, error) {
 	xrefIdx := bytes.LastIndex(data, []byte("\nxref\n"))
 	if xrefIdx == -1 {
@@ -133,13 +103,8 @@ func normalizePDF(data []byte) ([]byte, error) {
 	return out.Bytes(), nil
 }
 
-// normalizePDFObject normalises a single indirect object's bytes (from its
-// "N G obj" header to just before the next object, or end of file). Objects
-// without a stream are returned unchanged. Objects with a stream have their
-// /Length value blanked and their stream content inflated when the
-// dictionary declares /FlateDecode; other streams (uncompressed, or using a
-// filter other than FlateDecode, such as embedded binary font data with no
-// filter at all) are carried through byte for byte.
+// normalizePDFObject normalises a single indirect object's bytes: a
+// /FlateDecode stream has its /Length blanked and its content inflated.
 func normalizePDFObject(obj []byte) ([]byte, error) {
 	streamIdx := bytes.Index(obj, []byte("stream"))
 	if streamIdx == -1 {
@@ -197,9 +162,7 @@ func normalizePDFObject(obj []byte) ([]byte, error) {
 }
 
 // mismatchReport locates the first byte at which the normalised got and
-// want representations diverge and renders a printable report naming the
-// offset and the bytes on each side, rather than letting the test framework
-// print two large opaque blobs.
+// want representations diverge and reports the offset and bytes on each side.
 func mismatchReport(got, want []byte) string {
 	n := len(got)
 	if len(want) < n {

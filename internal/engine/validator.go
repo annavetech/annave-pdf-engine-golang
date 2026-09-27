@@ -21,17 +21,17 @@ var validSpanKinds = map[string]bool{
 	ast.SpanBoldItalic: true, ast.SpanCode: true, ast.SpanStrike: true, ast.SpanLink: true,
 }
 
-func ValidateDocument(doc *ast.DocumentNode) error {
+func ValidateDocument(doc *ast.DocumentNode, cfg *Config) error {
 	if doc == nil {
 		return NewError("ENGINE_ERR_INVALID_DOCUMENT", StageValidation, "Document must not be nil.")
 	}
 	if doc.Type != ast.TypeDocument {
 		return NewError("ENGINE_ERR_INVALID_DOCUMENT", StageValidation, `Document type must be "document".`)
 	}
-	maxNodes := appLimits.Document.MaxNodes
+	maxNodes := cfg.Limits.Document.MaxNodes
 	if len(doc.Children) > maxNodes {
 		return NewError("ENGINE_ERR_TOO_MANY_NODES", StageValidation,
-			msg("ENGINE_ERR_TOO_MANY_NODES", "max_nodes", maxNodes))
+			cfg.msg("ENGINE_ERR_TOO_MANY_NODES", "max_nodes", maxNodes))
 	}
 	for i, node := range doc.Children {
 		if err := validateNode(&node, i); err != nil {

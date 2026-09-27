@@ -20,9 +20,8 @@ var (
 	rstBullet    = regexp.MustCompile(`^[-*+]\s`)
 	rstOrdered   = regexp.MustCompile(`^\d+[.)]\s`)
 
-	// rstBulletPrefix and rstOrderedPrefix require one or more spaces after
-	// the marker (unlike rstBullet/rstOrdered above, which only detect the
-	// marker) because they also strip the prefix via ReplaceAllString.
+	// rstBulletPrefix and rstOrderedPrefix strip the marker plus its spaces,
+	// unlike rstBullet/rstOrdered which only detect it.
 	rstBulletPrefix  = regexp.MustCompile(`^[-*+]\s+`)
 	rstOrderedPrefix = regexp.MustCompile(`^\d+[.)]\s+`)
 
@@ -34,8 +33,8 @@ var (
 
 type RstParser struct{}
 
-func (p *RstParser) CanParse(input string) bool {
-	for _, l := range strings.Split(input, "\n") {
+func (p *RstParser) CanParse(input []byte) bool {
+	for _, l := range strings.Split(string(input), "\n") {
 		t := strings.TrimSpace(l)
 		if len(t) >= 4 && adornmentChars[t[0]] && isAllSame(t) {
 			return true
@@ -44,8 +43,8 @@ func (p *RstParser) CanParse(input string) bool {
 	return false
 }
 
-func (p *RstParser) Parse(input string) (*ast.DocumentNode, error) {
-	lines := strings.Split(input, "\n")
+func (p *RstParser) Parse(input []byte) (*ast.DocumentNode, error) {
+	lines := strings.Split(string(input), "\n")
 	var children []ast.Node
 	levelMap := map[byte]int{}
 	nextLevel := func(ch byte) int {

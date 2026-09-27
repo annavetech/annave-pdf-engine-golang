@@ -18,42 +18,43 @@ import (
 // DocxParser parses Microsoft Word (.docx) files.
 type DocxParser struct{}
 
-func (p *DocxParser) CanParse(input string) bool {
-	b := []byte(input)
-	if len(b) < 4 || b[0] != 0x50 || b[1] != 0x4b || b[2] != 0x03 || b[3] != 0x04 {
+func (p *DocxParser) CanParse(input []byte) bool {
+	if len(input) < 4 || input[0] != 0x50 || input[1] != 0x4b || input[2] != 0x03 || input[3] != 0x04 {
 		return false
 	}
-	return docxHasWordDoc(b)
+	da, err := newDocxArchive(input)
+	if err != nil {
+		return false
+	}
+	return da.entry("word/document.xml") != nil
 }
 
-func (p *DocxParser) Parse(input string) (*ast.DocumentNode, error) {
-	data := []byte(input)
-	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+func (p *DocxParser) Parse(input []byte) (*ast.DocumentNode, error) {
+	da, err := newDocxArchive(input)
 	if err != nil {
-		return nil, fmt.Errorf("docx: invalid archive: %w", err)
+		return nil, err
 	}
 
 	orderedNums := map[string]bool{}
-	if f := docxZipEntry(zr, "word/numbering.xml"); f != nil {
-		orderedNums = docxParseNumbering(f)
+	if numData, err := da.readNamedEntry("word/numbering.xml"); err != nil {
+		return nil, err
+	} else if numData != nil {
+		orderedNums = docxParseNumbering(numData)
 	}
 
 	// Build relationship map: rId → image path inside the ZIP.
-	rels := docxParseRels(zr)
+	relsData, err := da.readNamedEntry("word/_rels/document.xml.rels")
+	if err != nil {
+		return nil, err
+	}
+	rels := docxParseRelsXML(relsData)
 
-	docFile := docxZipEntry(zr, "word/document.xml")
-	if docFile == nil {
+	xmlData, err := da.readNamedEntry("word/document.xml")
+	if err != nil {
+		return nil, err
+	}
+	if xmlData == nil {
 		return nil, fmt.Errorf("docx: word/document.xml not found")
-	}
-	rc, err := docFile.Open()
-	if err != nil {
-		return nil, fmt.Errorf("docx: open document.xml: %w", err)
-	}
-	defer func() { _ = rc.Close() }()
-
-	xmlData, err := io.ReadAll(rc)
-	if err != nil {
-		return nil, fmt.Errorf("docx: read document.xml: %w", err)
 	}
 
 	blocks, err := docxParseDocument(xmlData)
@@ -61,9 +62,14 @@ func (p *DocxParser) Parse(input string) (*ast.DocumentNode, error) {
 		return nil, err
 	}
 
+	children, err := docxBlocksToAST(blocks, orderedNums, rels, da)
+	if err != nil {
+		return nil, err
+	}
+
 	return &ast.DocumentNode{
 		Type:     ast.TypeDocument,
-		Children: docxBlocksToAST(blocks, orderedNums, rels, zr),
+		Children: children,
 	}, nil
 }
 
@@ -91,18 +97,88 @@ type docxRun struct {
 
 // ── zip helpers ───────────────────────────────────────────────────────────────
 
-func docxParseRels(zr *zip.Reader) map[string]string {
-	f := docxZipEntry(zr, "word/_rels/document.xml.rels")
+// Safety caps on decompressed docx content, checked before and after
+// decompression so a small, pathological archive (a "zip bomb") cannot exhaust memory.
+const (
+	// maxDocxEntryBytes caps the uncompressed size of any single zip entry
+	// read from a .docx archive.
+	maxDocxEntryBytes uint64 = 50 * 1024 * 1024
+
+	// maxDocxTotalBytes caps the cumulative uncompressed bytes read across
+	// every entry decoded from one .docx archive.
+	maxDocxTotalBytes uint64 = 150 * 1024 * 1024
+)
+
+// docxArchive indexes a .docx zip archive's entries for O(1) lookup and
+// enforces the decompressed-size caps across every entry read through it.
+type docxArchive struct {
+	files map[string]*zip.File
+	read  uint64 // cumulative uncompressed bytes read so far via readFile
+}
+
+// newDocxArchive opens data as a zip archive and indexes its entries.
+func newDocxArchive(data []byte) (*docxArchive, error) {
+	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+	if err != nil {
+		return nil, fmt.Errorf("docx: invalid archive: %w", err)
+	}
+	files := make(map[string]*zip.File, len(zr.File))
+	for _, f := range zr.File {
+		files[f.Name] = f
+	}
+	return &docxArchive{files: files}, nil
+}
+
+// entry returns the zip.File for name, or nil if the archive has no such
+// entry. This is an O(1) map lookup, not a linear scan.
+func (da *docxArchive) entry(name string) *zip.File {
+	return da.files[name]
+}
+
+// readNamedEntry reads and returns the full uncompressed content of the
+// entry named name, or (nil, nil) if the archive has no such entry.
+func (da *docxArchive) readNamedEntry(name string) ([]byte, error) {
+	f := da.entry(name)
 	if f == nil {
-		return nil
+		return nil, nil
+	}
+	return da.readFile(f)
+}
+
+// readFile reads the full uncompressed content of f, enforcing both the
+// per-entry cap and the cumulative cap shared across this archive.
+func (da *docxArchive) readFile(f *zip.File) ([]byte, error) {
+	if f.UncompressedSize64 > maxDocxEntryBytes {
+		return nil, fmt.Errorf("docx: entry %q declares %d uncompressed bytes, exceeding the %d byte per-entry cap",
+			f.Name, f.UncompressedSize64, maxDocxEntryBytes)
+	}
+	// da.read never exceeds maxDocxTotalBytes, so this subtraction cannot underflow.
+	if f.UncompressedSize64 > maxDocxTotalBytes-da.read {
+		return nil, fmt.Errorf("docx: reading entry %q would bring the archive's cumulative uncompressed bytes to %d, exceeding the %d byte archive-wide cap",
+			f.Name, da.read+f.UncompressedSize64, maxDocxTotalBytes)
 	}
 	rc, err := f.Open()
 	if err != nil {
-		return nil
+		return nil, fmt.Errorf("docx: open %q: %w", f.Name, err)
 	}
 	defer func() { _ = rc.Close() }()
-	data, err := io.ReadAll(rc)
+
+	// Read one byte past the cap so an entry whose actual decompressed size
+	// exceeds its declared size is caught here, not by exhausting memory.
+	data, err := io.ReadAll(io.LimitReader(rc, int64(maxDocxEntryBytes)+1)) //nolint:gosec // maxDocxEntryBytes is a fixed 50 MiB constant
 	if err != nil {
+		return nil, fmt.Errorf("docx: read %q: %w", f.Name, err)
+	}
+	if uint64(len(data)) > maxDocxEntryBytes {
+		return nil, fmt.Errorf("docx: entry %q exceeds the %d byte per-entry cap after decompression",
+			f.Name, maxDocxEntryBytes)
+	}
+	da.read += uint64(len(data))
+	return data, nil
+}
+
+func docxParseRelsXML(data []byte) map[string]string {
+	if data == nil {
 		return nil
 	}
 	rels := map[string]string{}
@@ -124,36 +200,9 @@ func docxParseRels(zr *zip.Reader) map[string]string {
 	return rels
 }
 
-func docxZipEntry(zr *zip.Reader, name string) *zip.File {
-	for _, f := range zr.File {
-		if f.Name == name {
-			return f
-		}
-	}
-	return nil
-}
-
-func docxHasWordDoc(data []byte) bool {
-	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
-	if err != nil {
-		return false
-	}
-	return docxZipEntry(zr, "word/document.xml") != nil
-}
-
 // ── numbering.xml → ordered flag map ──────────────────────────────────────────
 
-func docxParseNumbering(f *zip.File) map[string]bool {
-	rc, err := f.Open()
-	if err != nil {
-		return nil
-	}
-	defer func() { _ = rc.Close() }()
-	data, err := io.ReadAll(rc)
-	if err != nil {
-		return nil
-	}
-
+func docxParseNumbering(data []byte) map[string]bool {
 	// abstractNumId → ordered (decimal = true)
 	abstractOrdered := map[string]bool{}
 	// numId → abstractNumId
@@ -654,7 +703,7 @@ func docxReadText(dec *xml.Decoder) (string, error) {
 
 // ── AST conversion ────────────────────────────────────────────────────────────
 
-func docxBlocksToAST(blocks []any, orderedNums map[string]bool, rels map[string]string, zr *zip.Reader) []ast.Node {
+func docxBlocksToAST(blocks []any, orderedNums map[string]bool, rels map[string]string, da *docxArchive) ([]ast.Node, error) {
 	var nodes []ast.Node
 	i := 0
 	for i < len(blocks) {
@@ -662,7 +711,11 @@ func docxBlocksToAST(blocks []any, orderedNums map[string]bool, rels map[string]
 		case docxParaBlock:
 			// Embedded image takes priority over text content.
 			if v.imageRID != "" {
-				if imgNode, ok := docxImageNode(v.imageRID, rels, zr); ok {
+				imgNode, ok, err := docxImageNode(v.imageRID, rels, da)
+				if err != nil {
+					return nil, err
+				}
+				if ok {
 					nodes = append(nodes, imgNode)
 				}
 				i++
@@ -707,36 +760,33 @@ func docxBlocksToAST(blocks []any, orderedNums map[string]bool, rels map[string]
 			i++
 		}
 	}
-	return nodes
+	return nodes, nil
 }
 
-func docxImageNode(rID string, rels map[string]string, zr *zip.Reader) (ast.Node, bool) {
+// docxImageNode reads the embedded image referenced by rID and returns it
+// as an ast.Node. ok is false when the image is not resolvable.
+func docxImageNode(rID string, rels map[string]string, da *docxArchive) (ast.Node, bool, error) {
 	if rels == nil {
-		return ast.Node{}, false
+		return ast.Node{}, false, nil
 	}
 	path, ok := rels[rID]
 	if !ok {
-		return ast.Node{}, false
+		return ast.Node{}, false, nil
 	}
-	f := docxZipEntry(zr, path)
+	f := da.entry(path)
 	if f == nil {
-		return ast.Node{}, false
+		return ast.Node{}, false, nil
 	}
-	rc, err := f.Open()
+	data, err := da.readFile(f)
 	if err != nil {
-		return ast.Node{}, false
-	}
-	defer func() { _ = rc.Close() }()
-	data, err := io.ReadAll(rc)
-	if err != nil {
-		return ast.Node{}, false
+		return ast.Node{}, false, fmt.Errorf("docx: embedded image %q: %w", path, err)
 	}
 	return ast.Node{
 		Type: ast.TypeImage,
 		Alt:  "image",
 		Src:  path,
 		Data: data,
-	}, true
+	}, true, nil
 }
 
 func docxParaToNode(p docxParaBlock) (ast.Node, bool) {

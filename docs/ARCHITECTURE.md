@@ -1,7 +1,7 @@
 <!--
-title:       ANNÁVE PDF Engine — Architecture
-description: Hexagonal architecture overview, six-stage pipeline, port interfaces,
-             package structure, and instructions for adding a new parser.
+title:       ANNÁVE PDF Engine: Architecture
+description: Six-stage pipeline overview, the public API and per-Engine
+             configuration, package structure, and instructions for adding a new parser.
 author:      Anna Veretennykova
 website:     www.annave.tech
 version:     1.2.0
@@ -13,37 +13,37 @@ updated:     2026-08-23
 
 ## Design pattern
 
-The engine uses **hexagonal architecture** (ports and adapters). The domain core — the six-stage conversion pipeline — has no knowledge of HTTP, file I/O, or any specific output format. All delivery and infrastructure concerns are adapters that connect to the core through formal interfaces (ports).
+The engine is a public Go package (`pdfengine`, at the module root) wrapping a six-stage conversion pipeline (`internal/engine`). The pipeline itself has no knowledge of where its input came from or how its output is delivered: it takes a document and a format, and returns PDF bytes or an error. Two consumers drive it today: the `pdfengine` package (for library callers) and `cmd/cli` (for the `annave` command). Both call straight into `internal/engine`; there is no separate ports-and-adapters interface layer between them and the pipeline, and no runtime-pluggable delivery mechanism: adding a new one (a future MCP server, for example) means writing a new package that imports `internal/engine` or `pdfengine` directly, the same way `cmd/cli` does.
 
-This means the same pipeline can be driven by an HTTP server, a CLI command, a test, or any future adapter, without any changes to the core logic.
+Configuration (style, limits, messages) is resolved once, when a `pdfengine.Engine` or `internal/engine.Pipeline` is constructed, into an immutable `internal/engine.Config`; see `docs/CONFIGURATION.md`. Two `Engine` values can hold two different `Config`s in the same process.
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│  Delivery adapters                                      │
-│  internal/api/   — HTTP handler + middleware chain      │
-│  cmd/cli/        — cobra CLI                            │
-└─────────────────────┬───────────────────────────────────┘
-                      │ implements port.Converter
+┌──────────────────────────────────────────────────────┐
+│ Consumers                                            │
+│ pdfengine (module root) : public library entry point │
+│ cmd/cli/                : cobra CLI                  │
+└──────────────────────────────────────────────────────┘
+                      │  pdfengine.New(opts...) (*Engine, error)
+                      │  (*Engine).Convert(ctx, data, format) ([]byte, error)
                       ▼
-┌─────────────────────────────────────────────────────────┐
-│  Domain core — internal/engine/                         │
-│                                                         │
-│  Pipeline.Run(input string, format InputFormat) []byte  │
-│                                                         │
-│  Stage 1: Normalise   normalizer.go                     │
-│  Stage 2: Parse       parser registry                   │
-│  Stage 3: Validate    validator.go                      │
-│  Stage 4: Layout      layout.go                         │
-│  Stage 5: Paginate    paginator.go                      │
-│  Stage 6: Render      renderer.go                       │
-└─────────────────────┬───────────────────────────────────┘
-                      │ implements port.DocumentParser
+┌───────────────────────────────────────────────────────────────────┐
+│ Pipeline : internal/engine/                                       │
+│ NewPipeline(cfg *Config) *Pipeline                                │
+│ (*Pipeline).Run(input string, format InputFormat) ([]byte, error) │
+│ Stage 1: Normalise   normalizer.go                                │
+│ Stage 2: Parse       parser registry                              │
+│ Stage 3: Validate    validator.go                                 │
+│ Stage 4: Layout      layout.go                                    │
+│ Stage 5: Paginate    paginator.go                                 │
+│ Stage 6: Render      renderer.go                                  │
+└───────────────────────────────────────────────────────────────────┘
+                      │  implements parser.Parser
                       ▼
-┌─────────────────────────────────────────────────────────┐
-│  Parser adapters — internal/parser/                     │
-│  md.go, html.go, json.go, csv.go, yaml.go, xml.go,      │
-│  rst.go, ipynb.go, docx.go, image.go, txt.go            │
-└─────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────┐
+│ Parsers : internal/parser/                        │
+│ md.go, html.go, json.go, csv.go, yaml.go, xml.go, │
+│ rst.go, ipynb.go, docx.go, image.go, txt.go       │
+└───────────────────────────────────────────────────┘
 ```
 
 ---
@@ -52,11 +52,11 @@ This means the same pipeline can be driven by an HTTP server, a CLI command, a t
 
 ### Stage 1: Normalise (`internal/engine/normalizer.go`)
 
-Input: raw string (from HTTP body, file upload, or CLI stdin)
+Input: raw string (from a file, CLI stdin, or a direct library call)
 
 - Detects and strips UTF-8 BOM
 - Normalises line endings (CRLF, CR → LF)
-- Enforces `input.max_input_chars` from `config/limits.yaml`
+- Enforces the Engine's configured `input.max_input_chars` (the embedded `config/limits.yaml` by default, or a caller-supplied file, see `docs/CONFIGURATION.md`)
 
 Output: clean UTF-8 string with LF line endings
 
@@ -67,24 +67,24 @@ Input: normalised string + format hint
 The parser registry (`registry.go`) selects the appropriate parser:
 - If `format` is explicit and recognised, use `byFormat[format]` directly
 - If `format` is `auto`, iterate `ordered []Parser` and call `CanParse` on each until one accepts the input
-- Binary parsers (DOCX, image) are listed first in the ordered slice — their `CanParse` checks magic bytes and is O(1)
+- Binary parsers (DOCX, image) are listed first in the ordered slice; their `CanParse` checks magic bytes and is O(1)
 
-Each parser implements `DocumentParser`:
+Each parser implements `parser.Parser` (`internal/parser/interface.go`):
 ```go
-type DocumentParser interface {
+type Parser interface {
     CanParse(input string) bool
     Parse(input string) (*ast.DocumentNode, error)
 }
 ```
 
-Output: `*ast.DocumentNode` — the internal AST
+Output: `*ast.DocumentNode` (the internal AST)
 
 ### Stage 3: Validate (`internal/engine/validator.go`)
 
 Input: `*ast.DocumentNode`
 
 - Verifies the document root type is `"document"`
-- Enforces `document.max_nodes` from `config/limits.yaml`
+- Enforces the Engine's configured `document.max_nodes`
 - Checks every block node for a valid type and required fields
 - Checks every inline span for a valid kind
 
@@ -94,7 +94,7 @@ Output: validated document or `ENGINE_ERR_INVALID_*` / `ENGINE_ERR_TOO_MANY_NODE
 
 Input: `*ast.DocumentNode`
 
-Converts the abstract document tree into a flat list of `LayoutBox` values — concrete positioned elements with computed dimensions. At this stage, the engine knows the text column width, font metrics, and wrapping behaviour.
+Converts the abstract document tree into a flat list of `LayoutBox` values: concrete positioned elements with computed dimensions. At this stage, the engine knows the text column width, font metrics, and wrapping behaviour.
 
 Each `LayoutBox` holds:
 - Element type and content
@@ -109,7 +109,7 @@ Input: `[]LayoutBox`
 
 Groups layout boxes into pages that fit within the configured page height minus margins. A box that would overflow the current page is moved to the next page.
 
-Enforces `document.max_pages` from `config/limits.yaml`.
+Enforces the Engine's configured `document.max_pages`.
 
 Output: `[]Page` where each `Page` holds a slice of `LayoutBox`
 
@@ -129,7 +129,7 @@ Output: `[]byte` (PDF)
 
 ## AST types (`internal/ast/`)
 
-The AST has no dependencies on other internal packages — it is the shared data type passed between pipeline stages.
+The AST has no dependencies on other internal packages; it is the shared data type passed between pipeline stages.
 
 ### Block nodes (`ast.Node`)
 
@@ -157,7 +157,7 @@ The AST has no dependencies on other internal packages — it is the shared data
 | `SpanBoldItalic` | Bold and italic |
 | `SpanCode` | Inline code |
 | `SpanStrike` | Strikethrough |
-| `SpanLink` | Hyperlink — `Href` field holds the URL |
+| `SpanLink` | Hyperlink; `Href` field holds the URL |
 
 ---
 
@@ -166,22 +166,20 @@ The AST has no dependencies on other internal packages — it is the shared data
 ```
 github.com/annavetech/annave-pdf-engine-golang/
 ├── cmd/
-│   └── server/          — HTTP server entry point
-├── config/              — Go package; embeds and exports all YAML bytes
+│   └── cli/             : cobra CLI entry point
+├── config/              : Go package; embeds and exports all YAML bytes
 ├── internal/
-│   ├── api/             — HTTP handler, middleware chain
-│   ├── ast/             — DocumentNode, Node, InlineSpan types
-│   ├── engine/          — Pipeline and the six pipeline stages
-│   ├── parser/          — One file per supported input format
-│   └── port/            — Formal interface definitions
-└── schema/              — JSON Schema definitions
+│   ├── ast/             : DocumentNode, Node, InlineSpan types
+│   ├── engine/          : Pipeline, Config/LoadConfig, and the six pipeline stages
+│   └── parser/          : One file per supported input format, behind parser.Parser
+└── schema/              : JSON Schema definitions
 ```
 
 ---
 
 ## How to add a new input format
 
-1. **Create `internal/parser/yourformat.go`** implementing `DocumentParser`:
+1. **Create `internal/parser/yourformat.go`** implementing `parser.Parser`:
 
 ```go
 package parser
@@ -192,7 +190,7 @@ type YourParser struct{}
 
 // CanParse returns true if this parser should handle the given input.
 // For text formats: check a distinctive prefix or structural marker.
-// For binary formats: check magic bytes — input[0:N] == expectedMagic.
+// For binary formats, check magic bytes: input[0:N] == expectedMagic.
 func (p *YourParser) CanParse(input string) bool {
     return len(input) > 4 && input[:4] == "YOUM"
 }
@@ -212,7 +210,7 @@ const FormatYour InputFormat = "your"
 // In extToFormat:
 "your": FormatYour,
 
-// In NewRegistry().ordered — binary before text parsers:
+// In NewRegistry().ordered (binary before text parsers):
 &YourParser{},
 
 // In NewRegistry().byFormat:
@@ -223,7 +221,7 @@ FormatYour: &YourParser{},
 
 4. **Update `config/messages.yaml`** to include the new format in the `ENGINE_ERR_UNSUPPORTED_FORMAT` message list.
 
-Nothing else changes. The HTTP handler, pipeline, and renderer are format-agnostic.
+Nothing else changes. The pipeline and renderer are format-agnostic.
 
 ---
 
@@ -241,4 +239,4 @@ type AnnaveError struct {
 
 `EngineStage` values: `input`, `parser`, `validation`, `layout`, `pagination`, `render`.
 
-Create an error with `engine.NewError(code, stage, message)`. The HTTP handler maps stage to HTTP status code and serialises the error as JSON per `schema/error.v1.schema.json`.
+Create an error with `engine.NewError(code, stage, message)`. The public `pdfengine` package translates it to a `*pdfengine.Error`; callers use `errors.As` to obtain it and branch on `Code`.

@@ -19,13 +19,12 @@ import (
 // ImageParser handles raster image uploads: PNG, JPEG, GIF, WebP.
 type ImageParser struct{}
 
-func (p *ImageParser) CanParse(input string) bool {
-	return isImageBytes([]byte(input))
+func (p *ImageParser) CanParse(input []byte) bool {
+	return isImageBytes(input)
 }
 
-func (p *ImageParser) Parse(input string) (*ast.DocumentNode, error) {
-	b := []byte(input)
-	cfg, _, err := image.DecodeConfig(bytes.NewReader(b))
+func (p *ImageParser) Parse(input []byte) (*ast.DocumentNode, error) {
+	cfg, _, err := image.DecodeConfig(bytes.NewReader(input))
 	if err != nil {
 		return nil, fmt.Errorf("image: decode config: %w", err)
 	}
@@ -36,7 +35,7 @@ func (p *ImageParser) Parse(input string) (*ast.DocumentNode, error) {
 			Alt:           "image",
 			NaturalWidth:  float64(cfg.Width),
 			NaturalHeight: float64(cfg.Height),
-			Data:          b,
+			Data:          input,
 		}},
 	}, nil
 }

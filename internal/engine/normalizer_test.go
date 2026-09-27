@@ -10,6 +10,7 @@ import (
 )
 
 func TestNormalizeInput(t *testing.T) {
+	cfg := mustDefaultConfig(t)
 	cases := []struct {
 		name    string
 		input   string
@@ -53,12 +54,12 @@ func TestNormalizeInput(t *testing.T) {
 		},
 		{
 			name:  "passes through normal unicode",
-			input: "Héllo wörld — こんにちは",
-			want:  "Héllo wörld — こんにちは",
+			input: "Héllo wörld … こんにちは",
+			want:  "Héllo wörld … こんにちは",
 		},
 		{
 			name:    "rejects input exceeding max character count",
-			input:   strings.Repeat("x", appLimits.Input.MaxInputChars+1),
+			input:   strings.Repeat("x", cfg.Limits.Input.MaxInputChars+1),
 			wantErr: true,
 		},
 		{
@@ -70,7 +71,7 @@ func TestNormalizeInput(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := NormalizeInput(tc.input)
+			got, err := NormalizeInput(tc.input, cfg)
 			if (err != nil) != tc.wantErr {
 				t.Fatalf("NormalizeInput() error = %v, wantErr %v", err, tc.wantErr)
 			}

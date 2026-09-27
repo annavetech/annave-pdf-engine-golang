@@ -412,19 +412,20 @@ func splitTokens(s string) []string {
 	var parts []string
 	cur := ""
 	for _, r := range s {
-		if r == '\n' {
+		switch r {
+		case '\n':
 			if cur != "" {
 				parts = append(parts, cur)
 				cur = ""
 			}
 			parts = append(parts, "\n")
-		} else if r == ' ' {
+		case ' ':
 			if cur != "" && !isSpaces(cur) {
 				parts = append(parts, cur)
 				cur = ""
 			}
 			cur += string(r)
-		} else {
+		default:
 			if isSpaces(cur) {
 				parts = append(parts, cur)
 				cur = ""

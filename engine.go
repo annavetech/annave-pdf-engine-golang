@@ -5,40 +5,53 @@
 package pdfengine
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/annavetech/annave-pdf-engine-golang/internal/engine"
 )
 
 // Engine converts documents to PDF. Create one with New and reuse it across
-// conversions; it holds no per-request state.
+// conversions; it is safe for concurrent use and holds no per-conversion state.
 type Engine struct {
 	pipeline *engine.Pipeline
 }
 
-// New returns a ready-to-use Engine with the built-in default configuration
-// (config/style.yaml, config/limits.yaml, embedded fonts).
-func New() *Engine {
-	return &Engine{pipeline: engine.NewPipeline()}
+// New builds an Engine from the built-in default configuration, applying
+// any Option given, and returns an error if a config file fails to load.
+func New(opts ...Option) (*Engine, error) {
+	o := &options{}
+	for _, opt := range opts {
+		opt(o)
+	}
+
+	var configOpts []engine.ConfigOption
+	if o.stylePath != "" {
+		configOpts = append(configOpts, engine.WithStyleFile(o.stylePath))
+	}
+	if o.limitsPath != "" {
+		configOpts = append(configOpts, engine.WithLimitsFile(o.limitsPath))
+	}
+	if o.style != nil {
+		configOpts = append(configOpts, engine.WithStyleOverride(toStyleOverride(*o.style)))
+	}
+
+	cfg, err := engine.LoadConfig(configOpts...)
+	if err != nil {
+		return nil, fmt.Errorf("pdfengine: %w", err)
+	}
+
+	return &Engine{pipeline: engine.NewPipeline(cfg)}, nil
 }
 
-// Convert renders input as f and returns the resulting PDF bytes. Pass
-// FormatAuto to detect the format from the content itself rather than
-// naming it explicitly.
-//
-// On failure, the returned error can be inspected with errors.As into
-// *Error to read the machine-readable code and the pipeline stage that
-// failed.
-func (e *Engine) Convert(input string, f Format, opts ...Option) ([]byte, error) {
-	cfg := &options{}
-	for _, o := range opts {
-		o(cfg)
+// Convert renders data as f and returns the resulting PDF bytes. Pass
+// FormatAuto to detect the format from the content instead of naming it.
+func (e *Engine) Convert(ctx context.Context, data []byte, f Format) ([]byte, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
 	}
 
-	var runOpts []engine.RunOption
-	if cfg.style != nil {
-		runOpts = append(runOpts, engine.WithStyleOverride(toStyleOverride(*cfg.style)))
-	}
-
-	pdf, err := e.pipeline.Run(input, f.toInternal(), runOpts...)
+	pdf, err := e.pipeline.Run(string(data), f.toInternal())
 	if err != nil {
 		return nil, translateError(err)
 	}

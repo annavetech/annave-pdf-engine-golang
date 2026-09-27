@@ -3,8 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Package config embeds the YAML configuration files that ship with the binary.
-// All values are loaded once at startup by the engine; no external files are
-// required at runtime.
+// No external files are required at runtime.
 package config
 
 import _ "embed"
@@ -23,8 +22,3 @@ var Limits []byte
 //
 //go:embed messages.yaml
 var Messages []byte
-
-// Server holds the raw bytes of config/server.yaml.
-//
-//go:embed server.yaml
-var Server []byte

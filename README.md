@@ -1,6 +1,6 @@
 # ANNÁVE PDF Engine
 
-Convert any document format to PDF with a single API call. No headless browser. No C dependencies. Self-hosted.
+Convert any document format to PDF from Go code or the command line. No headless browser. No C dependencies. Self-hosted.
 
 * **Author:** Anna Veretennykova · [www.annave.tech](https://www.annave.tech)
 * **License:** Apache 2.0
@@ -27,10 +27,10 @@ ANNÁVE PDF Engine is a single Go binary (~10 MB with embedded fonts). It takes 
 The `annave` CLI converts documents to PDF without running a server.
 
 ```bash
-# Go — works today
+# Go: works today
 go install github.com/annavetech/annave-pdf-engine-golang/cmd/cli@latest
 
-# Homebrew (macOS, Linux) — once a tagged release exists
+# Homebrew (macOS, Linux): once a tagged release exists
 brew tap annavetech/annave
 brew install annave-pdf-engine
 ```
@@ -41,30 +41,10 @@ annave pdf convert report.md -o report.pdf
 
 ---
 
-## Quickstart
-
-```bash
-# Start the server
-go run cmd/server/main.go
-
-# Convert a Markdown file
-curl -X POST http://localhost:5741/convert \
-  -F "file=@README.md" \
-  -o output.pdf
-
-# Convert a JSON document
-curl -X POST http://localhost:5741/convert \
-  -H "Content-Type: application/json" \
-  -d '{"type":"document","children":[{"type":"heading","level":1,"text":"Hello"},{"type":"paragraph","text":"World."}]}' \
-  -o output.pdf
-```
-
----
-
 ## Use as a library
 
 The engine is also a Go module, for services that want to convert documents
-in-process instead of calling an HTTP endpoint:
+in-process:
 
 ```bash
 go get github.com/annavetech/annave-pdf-engine-golang
@@ -73,7 +53,12 @@ go get github.com/annavetech/annave-pdf-engine-golang
 ```go
 import "github.com/annavetech/annave-pdf-engine-golang"
 
-pdf, err := pdfengine.New().Convert(text, pdfengine.FormatMarkdown)
+e, err := pdfengine.New()
+if err != nil {
+    return err
+}
+
+pdf, err := e.Convert(context.Background(), []byte(text), pdfengine.FormatMarkdown)
 if err != nil {
     var pe *pdfengine.Error
     if errors.As(err, &pe) {
@@ -83,9 +68,7 @@ if err != nil {
 }
 ```
 
-An `Engine` is safe to reuse across many calls to `Convert`. Pass
-`pdfengine.FormatAuto` to detect the format from the content, or override
-typography and page margins per call with `pdfengine.WithStyle`.
+An `Engine` is safe to reuse across many calls to `Convert`. Pass `pdfengine.FormatAuto` to detect the format from the content, or override typography and page margins when building the `Engine` with `pdfengine.WithStyle`, `pdfengine.WithStyleFile`, or `pdfengine.WithLimitsFile`. Configuration is fixed per `Engine`, not per call, so two `Engine` values can hold two different configurations in the same process.
 
 ---
 
@@ -105,64 +88,13 @@ typography and page margins per call with `pdfengine.WithStyle`.
 | Word Document | `.docx` | Headings, paragraphs, lists, tables; pure Go, no COM/LibreOffice |
 | Raster image | `.png`, `.jpg`, `.jpeg`, `.gif`, `.webp` | Embedded at full page width with correct aspect ratio |
 
-Pass the format explicitly with `?format=md` to skip auto-detection.
-
----
-
-## API reference
-
-### `POST /convert`
-
-Accepts three content types:
-
-**Multipart form upload:**
-```
-Content-Type: multipart/form-data
-Field: file — the document file
-```
-
-**Raw body with format hint:**
-```
-Content-Type: text/plain
-GET parameter: ?format=md
-```
-
-**JSON document:**
-```
-Content-Type: application/json
-Body: { "type": "document", "children": [...] }
-```
-
-**Success response — 200 OK:**
-```
-Content-Type: application/pdf
-X-Engine-Version: <engine version>
-X-Request-Id: <uuid>
-Body: <PDF bytes>
-```
-
-**Error response — 4xx/5xx:**
-```json
-{
-  "error": {
-    "code": "ENGINE_ERR_FILE_TOO_LARGE",
-    "stage": "input",
-    "message": "File exceeds the maximum allowed size of 5 MB."
-  }
-}
-```
-
-See [`schema/error.v1.schema.json`](schema/error.v1.schema.json) for the full error schema and [`config/messages.yaml`](config/messages.yaml) for all error codes.
-
-### `GET /health`
-
-Returns `200 OK` with `{"status":"ok","version":"<engine version>"}`. Use this as a readiness probe.
+Pass the format explicitly with `pdfengine.FormatMarkdown` (library) or `--format md` (CLI) to skip auto-detection.
 
 ---
 
 ## JSON document schema
 
-The canonical input format that all parsers produce internally. Send it directly for programmatic use:
+The canonical input format that all parsers produce internally. Pass it directly as `pdfengine.FormatJSON` input for programmatic use:
 
 ```json
 {
@@ -186,63 +118,47 @@ Full schema: [`schema/document.v1.schema.json`](schema/document.v1.schema.json)
 
 ## Configuration
 
-Edit the YAML files in `config/` and rebuild. No code changes required.
-
 | File | Controls |
 |---|---|
 | [`config/style.yaml`](config/style.yaml) | Page size, margins, font sizes, line heights, colors |
 | [`config/limits.yaml`](config/limits.yaml) | Max file size, max nodes, max pages |
 | [`config/messages.yaml`](config/messages.yaml) | All error messages and their codes |
 
-The configuration is embedded in the binary at build time. A custom deployment (different page size, corporate fonts, stricter limits) only requires editing YAML and running `go build`.
+All three are embedded in the binary at build time; editing one and running `go build` changes the default for every `Engine` that does not override it.
+
+`style.yaml` and `limits.yaml` can also be replaced per `Engine`, at runtime, without a rebuild: `pdfengine.New(pdfengine.WithStyleFile(path), pdfengine.WithLimitsFile(path))`, or `annave pdf convert --style-file path --limits-file path` from the CLI. The library never reads a file unless one of these options names it explicitly; see [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md).
 
 ---
 
 ## Architecture
 
-The engine follows a hexagonal (ports and adapters) structure. The six-stage pipeline is the domain core; everything outside it is an adapter.
+The public `pdfengine` package and the `annave` CLI both call straight into a six-stage internal pipeline (`internal/engine`). The pipeline has no knowledge of where its input came from or how its output is delivered.
 
 ```
-Delivery adapter (HTTP, gRPC, CLI)
-        │
-        ▼
-  [ Converter port ]
+pdfengine.New(opts...) (*Engine, error)
+(*Engine).Convert(ctx, data, format) ([]byte, error)
         │
         ▼
 ┌──────────────────────────────────────────┐
-│  Pipeline (domain core)                  │
+│  Pipeline                                │
 │                                          │
-│  1. Normalise   — clean raw input        │
-│  2. Parse       — format → AST           │
-│  3. Validate    — AST constraints        │
-│  4. Layout      — AST → LayoutBox[]     │
-│  5. Paginate    — LayoutBox[] → Page[]  │
-│  6. Render      — Page[] → bytes        │
+│  1. Normalise   : clean raw input        │
+│  2. Parse       : format → AST           │
+│  3. Validate    : AST constraints        │
+│  4. Layout      : AST → LayoutBox[]      │
+│  5. Paginate    : LayoutBox[] → Page[]   │
+│  6. Render      : Page[] → bytes         │
 └──────────────────────────────────────────┘
-        │
-        ▼
-  [ Renderer port ]
         │
         ▼
    PDF bytes
 ```
 
-Adding a new input format: implement `port.DocumentParser` and register it in `internal/parser/registry.go`. Nothing else changes.
-
-Adding a new delivery mechanism (gRPC, CLI, Lambda): implement `port.Converter` and wire it to `engine.Pipeline`. Nothing in the domain core changes.
+Adding a new input format: implement `parser.Parser` and register it in `internal/parser/registry.go`. Nothing else changes. See `docs/ARCHITECTURE.md` for the full package map and configuration model.
 
 ---
 
 ## Security
-
-**Internal token enforcement:**
-Set `ANNAVE_INTERNAL_TOKEN` in the environment to require callers to send `X-Internal-Token: <secret>` on every request. Without the variable the engine runs open (suitable for localhost development).
-
-```bash
-ANNAVE_INTERNAL_TOKEN=your-secret go run cmd/server/main.go
-```
-
-The recommended deployment pattern for browser clients is the Backend-for-Frontend (BFF) approach: the browser calls your server-side API route, which holds the secret and forwards requests to the engine. The secret never reaches the browser.
 
 **Input validation:**
 - Maximum file size: 5 MB (configurable)
@@ -271,25 +187,25 @@ go test -fuzz=FuzzMdParser -fuzztime=30s ./internal/parser/...
 ## Building a release binary
 
 ```bash
-go build -o annave-pdf-engine ./cmd/server
+go build -o annave ./cmd/cli
 ```
 
 The binary embeds all fonts and configuration. No external files are needed at runtime.
 
 For cross-compilation (e.g. Linux on macOS):
 ```bash
-GOOS=linux GOARCH=amd64 go build -o annave-pdf-engine-linux ./cmd/server
+GOOS=linux GOARCH=amd64 go build -o annave-linux ./cmd/cli
 ```
 
 ---
 
 ## Use cases
 
-- **SaaS "Export to PDF" feature** — POST structured JSON from your backend, receive PDF bytes. No client-side rendering, no Puppeteer process to manage.
-- **Mobile app reports** — iOS or Android app posts structured data directly to the engine (gRPC planned for v2). No platform-specific PDF library needed.
-- **Data pipeline output** — CSV exports, Jupyter notebooks, YAML reports → clean PDF for stakeholder review or archival.
-- **Technical documentation** — Markdown or RST files → PDF for distribution or print.
-- **Self-hosted, zero vendor lock-in** — one binary, no API keys, no per-conversion pricing, runs anywhere Go does.
+- **SaaS "Export to PDF" feature**: call the library with structured JSON from your backend, get PDF bytes back. No client-side rendering, no Puppeteer process to manage.
+- **Mobile app reports**: the backend serving a mobile app embeds the library, or shells out to the CLI, to generate PDFs. No platform-specific PDF library needed.
+- **Data pipeline output**: CSV exports, Jupyter notebooks, YAML reports → clean PDF for stakeholder review or archival.
+- **Technical documentation**: Markdown or RST files → PDF for distribution or print.
+- **Self-hosted, zero vendor lock-in**: one binary, no API keys, no per-conversion pricing, runs anywhere Go does.
 
 ---
 

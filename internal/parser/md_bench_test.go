@@ -10,8 +10,8 @@ import (
 	"testing"
 )
 
-// benchInlineText is a 50-character string mixing bold, italic and inline
-// code — the constructs ParseInline and stripInline actually branch on.
+// benchInlineText is a 50-character string mixing bold, italic, and inline
+// code: the constructs ParseInline and stripInline branch on.
 const benchInlineText = `This is **bold** and _italic_ and ` + "`code`" + `.`
 
 func BenchmarkParseInline(b *testing.B) {
@@ -27,8 +27,7 @@ func BenchmarkStripInline(b *testing.B) {
 }
 
 // benchMdDocument4000Items builds an unordered list of 4,000 items, each
-// with inline formatting, matching the scale the remediation spec measured
-// MdParser.Parse against.
+// with inline formatting.
 func benchMdDocument4000Items() string {
 	var sb strings.Builder
 	for i := 0; i < 4000; i++ {
@@ -38,7 +37,7 @@ func benchMdDocument4000Items() string {
 }
 
 func BenchmarkMdParser_Parse(b *testing.B) {
-	input := benchMdDocument4000Items()
+	input := []byte(benchMdDocument4000Items())
 	p := &MdParser{}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

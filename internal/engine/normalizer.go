@@ -12,11 +12,11 @@ import (
 )
 
 // NormalizeInput cleans raw text before parsing: CRLF→LF, collapse blank lines, strip control chars.
-func NormalizeInput(raw string) (string, error) {
-	maxChars := appLimits.Input.MaxInputChars
+func NormalizeInput(raw string, cfg *Config) (string, error) {
+	maxChars := cfg.Limits.Input.MaxInputChars
 	if utf8.RuneCountInString(raw) > maxChars {
 		return "", NewError("ENGINE_ERR_INPUT_TOO_LARGE", StageInput,
-			msg("ENGINE_ERR_INPUT_TOO_LARGE", "max_chars", maxChars))
+			cfg.msg("ENGINE_ERR_INPUT_TOO_LARGE", "max_chars", maxChars))
 	}
 
 	text := strings.ReplaceAll(raw, "\r\n", "\n")

@@ -18,12 +18,18 @@ func main() {
 	data, _ := os.ReadFile(path) //nolint:gosec // path is the local dev debug tool's CLI argument, not external input
 	input := string(data)
 
-	normalized, _ := engine.NormalizeInput(input)
+	cfg, err := engine.LoadConfig()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "load default config: %v\n", err)
+		os.Exit(1)
+	}
+
+	normalized, _ := engine.NormalizeInput(input, cfg)
 	fmt.Printf("Input chars: %d\n", len([]rune(normalized)))
 	fmt.Printf("Input lines: %d\n", len(strings.Split(normalized, "\n")))
 
 	reg := parser.NewRegistry()
-	doc, _ := reg.Parse(normalized, parser.FormatMd)
+	doc, _ := reg.Parse([]byte(normalized), parser.FormatMd)
 	fmt.Printf("AST nodes:   %d\n", len(doc.Children))
 	for i, n := range doc.Children {
 		text := n.Text
@@ -34,10 +40,10 @@ func main() {
 	}
 
 	layout := engine.NewLayoutEngine()
-	boxes := layout.Compute(doc, engine.DocStyle)
+	boxes := layout.Compute(doc, cfg.Style)
 	fmt.Printf("Layout boxes: %d\n", len(boxes))
 
 	pag := engine.NewPaginator()
-	pages := pag.Paginate(boxes, engine.DocStyle.Page)
+	pages := pag.Paginate(boxes, cfg.Style.Page)
 	fmt.Printf("Pages:        %d\n", len(pages))
 }

@@ -6,7 +6,8 @@ package parser
 
 import "github.com/annavetech/annave-pdf-engine-golang/internal/ast"
 
+// Parser recognizes and parses raw document bytes into an AST.
 type Parser interface {
-	CanParse(input string) bool
-	Parse(input string) (*ast.DocumentNode, error)
+	CanParse(input []byte) bool
+	Parse(input []byte) (*ast.DocumentNode, error)
 }

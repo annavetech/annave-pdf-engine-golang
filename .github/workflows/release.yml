@@ -1,17 +1,24 @@
 name: Release
 
+# Releases on a v* tag push. The test job runs the full CI first; goreleaser runs only if it passes.
 on:
   push:
-    tags:
-      - "v*"
+    tags: ["v*"]
+
+permissions: {}
 
 jobs:
+  test:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ci.yml
+
   goreleaser:
+    needs: test
     runs-on: ubuntu-latest
 
-    # The default workflow token is read-only, which makes creating the
-    # release itself fail with 403. Only contents needs elevating; pushing
-    # the cask to the tap repository uses HOMEBREW_TAP_TOKEN instead.
+    # The default token is read-only; contents:write is needed so creating
+    # the release doesn't 403. Pushing the cask uses HOMEBREW_TAP_TOKEN instead.
     permissions:
       contents: write
 
@@ -20,13 +27,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      # go.mod declares 1.25 as the minimum supported Go version, but
-      # released binaries are built here, not just verified — so this uses
-      # "stable" rather than pinning to that minimum. The standard library
-      # itself ships security fixes per patch release; building the actual
-      # release artifacts with the current Go keeps them off a known-vulnerable
-      # toolchain without ever raising the go.mod compatibility promise.
-      # .github/workflows/ci.yml verifies the 1.25 minimum still builds.
+      # Uses "stable" rather than go.mod's 1.25 floor so release binaries build
+      # with current Go security fixes; ci.yml verifies the 1.25 floor separately.
       - uses: actions/setup-go@3041bf56c941b39c61721a86cd11f3bb1338122a # v5.2.0
         with:
           go-version: "stable"
@@ -34,11 +36,10 @@ jobs:
       - uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
         with:
           distribution: goreleaser
-          version: latest
+          version: "v2.18.2"
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # HOMEBREW_TAP_TOKEN must exist in this repository's secrets and
-          # must have write access to annavetech/homebrew-annave — it is
-          # what lets GoReleaser push the updated formula to that tap repo.
+          # Must exist in this repo's secrets with write access to
+          # annavetech/homebrew-annave, for pushing the updated cask.
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}

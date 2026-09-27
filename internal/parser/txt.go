@@ -21,11 +21,11 @@ var (
 
 type TxtParser struct{}
 
-func (p *TxtParser) CanParse(_ string) bool { return true }
+func (p *TxtParser) CanParse(_ []byte) bool { return true }
 
-func (p *TxtParser) Parse(input string) (*ast.DocumentNode, error) {
+func (p *TxtParser) Parse(input []byte) (*ast.DocumentNode, error) {
 	var children []ast.Node
-	blocks := splitBlocks(input)
+	blocks := splitBlocks(string(input))
 
 	for _, block := range blocks {
 		block = strings.TrimSpace(block)
