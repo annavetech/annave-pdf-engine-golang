@@ -27,7 +27,7 @@ go test ./...
 go run ./cmd/cli pdf convert README.md -o output.pdf
 ```
 
-Go 1.25 or later is required.
+Go 1.26 or later is required.
 
 ---
 
