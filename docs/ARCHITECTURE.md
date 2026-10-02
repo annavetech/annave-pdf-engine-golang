@@ -54,7 +54,7 @@ Configuration (style, limits, messages) is resolved once, when a `pdfengine.Engi
 
 Input: raw string (from a file, CLI stdin, or a direct library call)
 
-- Detects and strips UTF-8 BOM
+- Strips a leading UTF-8 BOM (text formats only; binary input skips this stage)
 - Normalises line endings (CRLF, CR → LF)
 - Enforces the Engine's configured `input.max_input_chars` (the embedded `config/limits.yaml` by default, or a caller-supplied file, see `docs/CONFIGURATION.md`)
 
@@ -62,18 +62,18 @@ Output: clean UTF-8 string with LF line endings
 
 ### Stage 2: Parse (`internal/parser/`)
 
-Input: normalised string + format hint
+Input: normalised bytes + format hint
 
 The parser registry (`registry.go`) selects the appropriate parser:
 - If `format` is explicit and recognised, use `byFormat[format]` directly
-- If `format` is `auto`, iterate `ordered []Parser` and call `CanParse` on each until one accepts the input
+- If `format` is `auto`, `Detect` iterates the `ordered []InputFormat` list and calls `CanParse` on each format's parser until one accepts the input. Detection runs once, before sanitising, so only input detected as HTML is sanitised
 - Binary parsers (DOCX, image) are listed first in the ordered slice; their `CanParse` checks magic bytes and is O(1)
 
 Each parser implements `parser.Parser` (`internal/parser/interface.go`):
 ```go
 type Parser interface {
-    CanParse(input string) bool
-    Parse(input string) (*ast.DocumentNode, error)
+    CanParse(input []byte) bool
+    Parse(input []byte) (*ast.DocumentNode, error)
 }
 ```
 
@@ -210,10 +210,10 @@ const FormatYour InputFormat = "your"
 // In extToFormat:
 "your": FormatYour,
 
-// In NewRegistry().ordered (binary before text parsers):
-&YourParser{},
+// In NewRegistry(maxInputChars).ordered (binary before text formats):
+FormatYour,
 
-// In NewRegistry().byFormat:
+// In newByFormat():
 FormatYour: &YourParser{},
 ```
 

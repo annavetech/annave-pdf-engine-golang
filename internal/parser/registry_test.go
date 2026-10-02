@@ -16,6 +16,9 @@ import (
 	"github.com/annavetech/pdfengine/internal/ast"
 )
 
+// testMaxInputChars matches the default input.max_input_chars in config/limits.yaml.
+const testMaxInputChars = 500000
+
 // minimalDocxWithTrailingSpace builds a valid docx (zip) archive whose
 // last byte is an ASCII space, by setting the zip comment to a single space.
 func minimalDocxWithTrailingSpace(t *testing.T) []byte {
@@ -89,7 +92,7 @@ func TestRegistry_Parse_DocxSurvivesTrailingWhitespaceByte(t *testing.T) {
 		t.Fatalf("expected the trimmed archive to be invalid (proving this is a genuine trap case), got no error")
 	}
 
-	r := NewRegistry()
+	r := NewRegistry(testMaxInputChars)
 	const wantText = "A minimal Word document."
 
 	for _, format := range []InputFormat{FormatDocx, FormatAuto} {
@@ -120,7 +123,7 @@ func TestRegistry_Parse_ImageSurvivesTrailingWhitespaceByte(t *testing.T) {
 	data := minimalPNGWithTrailingSpace(t)
 	assertGenuineTrapCase(t, data)
 
-	r := NewRegistry()
+	r := NewRegistry(testMaxInputChars)
 
 	for _, format := range []InputFormat{FormatImage, FormatAuto} {
 		t.Run(string(format), func(t *testing.T) {
@@ -150,7 +153,7 @@ func lastByte(b []byte) byte {
 // TestRegistry_Parse_TextFormatsStillTrimmed confirms text formats are
 // still trimmed of surrounding whitespace before parsing.
 func TestRegistry_Parse_TextFormatsStillTrimmed(t *testing.T) {
-	r := NewRegistry()
+	r := NewRegistry(testMaxInputChars)
 	doc, err := r.Parse([]byte("  \n  # Heading\n\nBody text.\n  \n"), FormatMd)
 	if err != nil {
 		t.Fatalf("Parse() error: %v", err)
@@ -168,7 +171,7 @@ func TestRegistry_Parse_TextFormatsStillTrimmed(t *testing.T) {
 // TestRegistry_Parse_UnrecognisedFormatReturnsError proves Registry.Parse
 // rejects an unregistered format with *UnsupportedFormatError.
 func TestRegistry_Parse_UnrecognisedFormatReturnsError(t *testing.T) {
-	r := NewRegistry()
+	r := NewRegistry(testMaxInputChars)
 	const bogus = InputFormat("not-a-real-format")
 	const src = "# Heading\n\nBody text.\n"
 
@@ -196,7 +199,7 @@ func TestRegistry_Parse_UnrecognisedFormatReturnsError(t *testing.T) {
 // TestRegistry_Parse_ImageFormatAliases proves --format png, jpg, jpeg,
 // gif and webp are accepted and routed to the same ImageParser as "image".
 func TestRegistry_Parse_ImageFormatAliases(t *testing.T) {
-	r := NewRegistry()
+	r := NewRegistry(testMaxInputChars)
 	withTrailer := minimalPNGWithTrailingSpace(t)
 	data := withTrailer[:len(withTrailer)-1] // valid PNG bytes, no trailing junk
 
@@ -219,7 +222,7 @@ func TestRegistry_Parse_ImageFormatAliases(t *testing.T) {
 // TestRegistry_Parse_TrulyUnknownFormatStillErrors proves a genuinely
 // unknown format name still returns *UnsupportedFormatError.
 func TestRegistry_Parse_TrulyUnknownFormatStillErrors(t *testing.T) {
-	r := NewRegistry()
+	r := NewRegistry(testMaxInputChars)
 	const bogus = InputFormat("bmp")
 
 	if r.SupportsFormat(bogus) {
@@ -229,5 +232,49 @@ func TestRegistry_Parse_TrulyUnknownFormatStillErrors(t *testing.T) {
 	var ufe *UnsupportedFormatError
 	if !errors.As(err, &ufe) {
 		t.Fatalf("expected *UnsupportedFormatError, got %T: %v", err, err)
+	}
+}
+
+// TestRegistry_Detect pins the format auto-detection picks for each kind of input.
+func TestRegistry_Detect(t *testing.T) {
+	withTrailer := minimalPNGWithTrailingSpace(t)
+	cases := []struct {
+		name  string
+		input []byte
+		want  InputFormat
+	}{
+		{"xml", []byte("<note><to>x</to></note>"), FormatXML},
+		{"html doctype", []byte("<!DOCTYPE html><p>x</p>"), FormatHTML},
+		{"markdown with tag", []byte("# T\n\n<b>x</b>"), FormatHTML},
+		{"yaml", []byte("a: 1"), FormatYAML},
+		{"json", []byte(`{"title": "Report"}`), FormatJSON},
+		// encoding/json rejects nesting past 10,000 levels.
+		{"json 10000 levels", nestedJSON(10000), FormatJSON},
+		{"json 10001 levels", nestedJSON(10001), FormatTxt},
+		{"markdown link", []byte("[Link](https://example.com) is the intro."), FormatMd},
+		{"task list", []byte("[ ] todo"), FormatTxt},
+		{"braced word", []byte("{draft} notes"), FormatTxt},
+		{"bracketed list", []byte("[a, b, c]"), FormatTxt},
+		{"indexed call", []byte("callbacks[i](err) is called once."), FormatTxt},
+		{"indexed call after call", []byte("getHandlers()[i](event) runs each handler."), FormatTxt},
+		{"csv short second row", []byte("Event,Time,Notes\nStandup,09:00"), FormatCSV},
+		{"prose with thousands separators", []byte("Revenue rose to 1,200,000 in 2024\nand to 950,000 in 2023."), FormatTxt},
+		{"csv short row with a time", []byte("t,v,n\n09:30,100"), FormatCSV},
+		{"csv short row with a date", []byte("date,val,n\n2024-01-01,100"), FormatCSV},
+		{"csv short row with a code", []byte("sku,qty,price\nSKU-1,100"), FormatCSV},
+		{"prose with approx. and thousands separators", []byte("Population was approx.1,200,000\nthen,flat"), FormatTxt},
+		{"prose with equal counts and thousands separators", []byte("We sold 1,234 units\nand 5,678 more."), FormatTxt},
+		{"json with Cells key", []byte(`{"title":"Q3 report","Cells":[1]}`), FormatJSON},
+		{"csv", []byte("Name,Role\nAnna,Engineer"), FormatCSV},
+		{"png", withTrailer[:len(withTrailer)-1], FormatImage},
+		{"empty", nil, FormatAuto},
+	}
+	r := NewRegistry(testMaxInputChars)
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := r.Detect(tc.input); got != tc.want {
+				t.Errorf("Detect() = %q, want %q", got, tc.want)
+			}
+		})
 	}
 }

@@ -27,10 +27,10 @@ ANNÁVE PDF Engine is a single Go binary (~10 MB with embedded fonts). It takes 
 The `annave` CLI converts documents to PDF without running a server.
 
 ```bash
-# Go: works today
+# Go
 go install github.com/annavetech/pdfengine/cmd/cli@latest
 
-# Homebrew (macOS, Linux): once a tagged release exists
+# Homebrew (macOS, Linux)
 brew tap annavetech/annave
 brew install annave-pdf-engine
 ```

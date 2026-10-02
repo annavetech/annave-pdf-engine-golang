@@ -7,6 +7,7 @@ package parser
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/annavetech/pdfengine/internal/ast"
@@ -16,13 +17,17 @@ type JsonParser struct{}
 
 func (p *JsonParser) CanParse(input []byte) bool {
 	t := bytes.TrimSpace(input)
-	return bytes.HasPrefix(t, []byte("{")) || bytes.HasPrefix(t, []byte("["))
+	if !bytes.HasPrefix(t, []byte("{")) && !bytes.HasPrefix(t, []byte("[")) {
+		return false
+	}
+	// Only valid JSON is claimed, so other text starting with { or [ reaches the later parsers.
+	return json.Valid(t)
 }
 
 func (p *JsonParser) Parse(input []byte) (*ast.DocumentNode, error) {
 	var raw interface{}
 	if err := json.Unmarshal(input, &raw); err != nil {
-		return &ast.DocumentNode{Type: ast.TypeDocument}, nil
+		return nil, fmt.Errorf("json: %w", err)
 	}
 	return normalizeJSON(raw), nil
 }

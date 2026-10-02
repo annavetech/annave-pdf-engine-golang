@@ -27,7 +27,7 @@ go test ./...
 go run ./cmd/cli pdf convert README.md -o output.pdf
 ```
 
-Go 1.26 or later is required.
+Go 1.26.8 or later is required.
 
 ---
 
@@ -93,7 +93,7 @@ See `docs/ARCHITECTURE.md` for the full walkthrough. Short version:
 
 1. Create `internal/parser/yourformat.go` with a struct implementing `parser.Parser` (two methods: `CanParse`, `Parse`).
 2. Add the format constant and extension mappings to `internal/parser/registry.go`.
-3. Register the parser in `NewRegistry()`: binary parsers (magic-byte checks) before text parsers in the `ordered` slice.
+3. Register the parser: add the format to the `ordered` slice in `NewRegistry(maxInputChars)`, binary formats (magic-byte checks) before text formats, and add the parser to `byFormat` in `newByFormat()`.
 4. Write a test in `internal/parser/yourformat_test.go`. The test fixture should be a real document from the ANNÁVE PDF Engine documentation, not lorem ipsum. This doubles as self-documenting content that people will not delete.
 5. Update the `ENGINE_ERR_UNSUPPORTED_FORMAT` message in `config/messages.yaml` to include the new format name.
 

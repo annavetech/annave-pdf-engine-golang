@@ -11,8 +11,10 @@ import (
 	"github.com/microcosm-cc/bluemonday"
 )
 
-// NormalizeInput cleans raw text before parsing: CRLF→LF, collapse blank lines, strip control chars.
+// NormalizeInput cleans raw text before parsing: strip a leading UTF-8 BOM, CRLF→LF, collapse blank lines, strip control chars.
 func NormalizeInput(raw string, cfg *Config) (string, error) {
+	raw = strings.TrimPrefix(raw, "\uFEFF")
+
 	maxChars := cfg.Limits.Input.MaxInputChars
 	if utf8.RuneCountInString(raw) > maxChars {
 		return "", NewError("ENGINE_ERR_INPUT_TOO_LARGE", StageInput,

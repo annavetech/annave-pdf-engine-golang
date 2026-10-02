@@ -16,6 +16,9 @@ import (
 	_ "golang.org/x/image/webp"
 )
 
+// maxImageDimensionPx caps image width and height; 4000 px is borrowed from an existing logo size cap.
+const maxImageDimensionPx = 4000
+
 // ImageParser handles raster image uploads: PNG, JPEG, GIF, WebP.
 type ImageParser struct{}
 
@@ -27,6 +30,10 @@ func (p *ImageParser) Parse(input []byte) (*ast.DocumentNode, error) {
 	cfg, _, err := image.DecodeConfig(bytes.NewReader(input))
 	if err != nil {
 		return nil, fmt.Errorf("image: decode config: %w", err)
+	}
+	if cfg.Width > maxImageDimensionPx || cfg.Height > maxImageDimensionPx {
+		return nil, fmt.Errorf("image: %dx%d px exceeds the limit of %d px per side",
+			cfg.Width, cfg.Height, maxImageDimensionPx)
 	}
 	return &ast.DocumentNode{
 		Type: ast.TypeDocument,
