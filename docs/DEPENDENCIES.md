@@ -11,7 +11,7 @@ updated:     2026-08-23
 
 # Dependencies
 
-Go version: **1.26** (minimum). The engine uses `log/slog` (added in 1.21); the 1.26 floor comes from `golang.org/x/image` v0.46.0 and `golang.org/x/net` v0.59.0, both of which declare `go 1.26.0`. Neither bump is vulnerability-driven; it is the routine cost of staying current on those modules.
+Go version: **1.26.8** (minimum). The engine uses `log/slog` (added in 1.21). The 1.26 minor comes from `golang.org/x/image` v0.46.0 and `golang.org/x/net` v0.59.0, both of which declare `go 1.26.0`. The patch level includes the standard library fixes for GO-2026-4601 (1.26.1) and GO-2026-6088 (1.26.6).
 
 All dependencies are listed in `go.mod`. Run `go mod verify` to confirm checksums match `go.sum`.
 
@@ -87,6 +87,19 @@ Used directly by `cmd/cli` for the CLI command tree (`pdf`, `pdf convert`). The 
 
 ---
 
+### `gopkg.in/yaml.v3 v3.0.1`
+
+Used for config loading in `internal/engine/liveconfig.go` and for YAML input in `internal/parser/yaml.go`.
+
+The YAML parser decodes input only into yaml.v3 `Node` trees, never into Go values, so yaml.v3's own alias and duplicate-key checks do not run on input.
+
+| Version range | Result |
+|---|---|
+| Any v3.x | Should work: the node API is stable |
+| v3.0.1 | Confirmed working |
+
+---
+
 ## Indirect dependencies
 
 These are required by direct dependencies but not imported directly by the engine.
@@ -100,7 +113,6 @@ These are required by direct dependencies but not imported directly by the engin
 | `github.com/pkg/errors` | v0.8.1 | gopdf: error wrapping |
 | `github.com/spf13/pflag` | v1.0.9 | cobra: POSIX/GNU-style flag parsing |
 | `golang.org/x/text` | v0.21.0 | golang.org/x/net: text encoding |
-| `gopkg.in/yaml.v3` | v3.0.1 | engine config loading |
 
 ---
 

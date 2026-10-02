@@ -54,6 +54,8 @@ Maximum size of a single input document.
 
 Maximum length of the normalised input string, applied after UTF-8 decode and line ending normalisation.
 
+The same limit bounds YAML aliases: the content they expand to may total at most this many characters, where each value reached through an alias counts as its length in characters plus one. Past it, the conversion fails with `ENGINE_ERR_PARSE_FAILED`.
+
 500,000 characters is roughly 300–400 pages of 13px body text at A4.
 
 | Value | Notes |

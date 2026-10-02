@@ -11,6 +11,7 @@ import (
 	"math"
 	"strings"
 	"sync"
+	"unicode/utf8"
 
 	"github.com/annavetech/pdfengine/internal/ast"
 	"golang.org/x/image/font"
@@ -332,26 +333,42 @@ func (m *TextMeasurer) tokenize(seg TextSegment) []MeasuredToken {
 	return tokens
 }
 
+// splitWord breaks word into the longest fragments that fit maxWidth.
+// Each rune is measured once; widths use the same formula as measureText.
 func (m *TextMeasurer) splitWord(word string, seg TextSegment, maxWidth float64) []MeasuredToken {
-	var result []MeasuredToken
-	fragment := ""
-	for _, ch := range word {
-		candidate := fragment + string(ch)
-		w := m.measureText(candidate, seg)
-		if w <= maxWidth {
-			fragment = candidate
-		} else {
-			if fragment != "" {
-				result = append(result, MeasuredToken{
-					Text: fragment, Width: m.measureText(fragment, seg), Kind: "word", Segment: seg,
-				})
-			}
-			fragment = string(ch)
+	face := m.faceFor(seg)
+	width := func(adv fixed.Int26_6, runes int) float64 {
+		if face == nil {
+			return float64(runes) * seg.FontSize * 0.6
 		}
+		return math.Round(float64(adv)/64.0*1000) / 1000
 	}
-	if fragment != "" {
+
+	var result []MeasuredToken
+	start, runes := 0, 0
+	var adv fixed.Int26_6
+	for i, ch := range word {
+		var chAdv fixed.Int26_6
+		if face != nil {
+			if a, ok := face.GlyphAdvance(ch); ok {
+				chAdv = a
+			}
+		}
+		if width(adv+chAdv, runes+1) <= maxWidth {
+			adv += chAdv
+			runes++
+			continue
+		}
+		if runes > 0 {
+			result = append(result, MeasuredToken{
+				Text: word[start:i], Width: width(adv, runes), Kind: "word", Segment: seg,
+			})
+		}
+		start, runes, adv = i, 1, chAdv
+	}
+	if runes > 0 {
 		result = append(result, MeasuredToken{
-			Text: fragment, Width: m.measureText(fragment, seg), Kind: "word", Segment: seg,
+			Text: word[start:], Width: width(adv, runes), Kind: "word", Segment: seg,
 		})
 	}
 	return result
@@ -408,33 +425,38 @@ func SpansToText(spans []ast.InlineSpan) string {
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
+// splitTokens splits s into "\n", runs of spaces and runs of other runes.
+// Parts are substrings of s, so a long run costs O(len) rather than O(len^2).
 func splitTokens(s string) []string {
+	if !utf8.ValidString(s) {
+		// Match range semantics: each invalid byte becomes U+FFFD.
+		var b strings.Builder
+		for _, r := range s {
+			b.WriteRune(r)
+		}
+		s = b.String()
+	}
 	var parts []string
-	cur := ""
-	for _, r := range s {
-		switch r {
-		case '\n':
-			if cur != "" {
-				parts = append(parts, cur)
-				cur = ""
+	start := 0
+	inSpaces := false
+	for i, r := range s {
+		switch {
+		case r == '\n':
+			if i > start {
+				parts = append(parts, s[start:i])
 			}
 			parts = append(parts, "\n")
-		case ' ':
-			if cur != "" && !isSpaces(cur) {
-				parts = append(parts, cur)
-				cur = ""
-			}
-			cur += string(r)
-		default:
-			if isSpaces(cur) {
-				parts = append(parts, cur)
-				cur = ""
-			}
-			cur += string(r)
+			start = i + 1
+		case (r == ' ') != inSpaces && i > start:
+			parts = append(parts, s[start:i])
+			start = i
+		}
+		if r != '\n' {
+			inSpaces = r == ' '
 		}
 	}
-	if cur != "" {
-		parts = append(parts, cur)
+	if start < len(s) {
+		parts = append(parts, s[start:])
 	}
 	return parts
 }

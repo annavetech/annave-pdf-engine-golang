@@ -5,6 +5,7 @@
 package parser
 
 import (
+	"bytes"
 	"regexp"
 	"strings"
 
@@ -22,7 +23,10 @@ var (
 	mdFence         = regexp.MustCompile("^(`{3,}|~{3,})\\s*(\\S*)\\s*$")
 	mdThematicBreak = regexp.MustCompile(`^(\s*[-*_]){3,}\s*$`)
 	mdImage         = regexp.MustCompile(`^!\[([^\]]*)\]\(([^)]+)\)\s*$`)
-	mdHasHeading    = regexp.MustCompile(`(?m)^#{1,}\s`)
+	// Detection: an ATX heading, or an inline link whose "[" starts a line or follows a byte
+	// that is not a word character, "]", ")", "}" or ".", so a[i](x) and f()[i](x) are not links.
+	mdDetectHeading = regexp.MustCompile(`(?m)^#{1,}\s`)
+	mdDetectLink    = regexp.MustCompile(`(?m)(?:^|[^\w\])}.])\[[^\]\n]+\]\([^)\s]+\)`)
 	mdQuotePrefix   = regexp.MustCompile(`^>\s?`)
 
 	// ParseInline delimiter patterns.
@@ -50,8 +54,20 @@ var (
 
 type MdParser struct{}
 
+// CanParse checks for a heading first, then for a link; each regex runs only if its marker occurs.
 func (p *MdParser) CanParse(input []byte) bool {
-	return mdHasHeading.Match(input)
+	return mdMatchFromMarker(mdDetectHeading, input, []byte("#")) ||
+		mdMatchFromMarker(mdDetectLink, input, []byte("]("))
+}
+
+// mdMatchFromMarker runs re from the start of the line holding the first marker.
+// Every match of re contains marker on its own line, so earlier lines cannot match.
+func mdMatchFromMarker(re *regexp.Regexp, input, marker []byte) bool {
+	i := bytes.Index(input, marker)
+	if i < 0 {
+		return false
+	}
+	return re.Match(input[bytes.LastIndexByte(input[:i], '\n')+1:])
 }
 
 func (p *MdParser) Parse(input []byte) (*ast.DocumentNode, error) {

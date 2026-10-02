@@ -7,10 +7,14 @@ package parser
 import (
 	"bytes"
 	"encoding/xml"
+	"errors"
 	"strings"
 
 	"github.com/annavetech/pdfengine/internal/ast"
 )
+
+// maxXMLDepth caps element nesting; the root element is level 1.
+const maxXMLDepth = 300
 
 type XmlParser struct{}
 
@@ -23,6 +27,10 @@ func (p *XmlParser) CanParse(input []byte) bool {
 func (p *XmlParser) Parse(input []byte) (*ast.DocumentNode, error) {
 	root, err := parseXMLRoot(input)
 	if err != nil {
+		var depthErr *DepthLimitError
+		if errors.As(err, &depthErr) {
+			return nil, err
+		}
 		return fallbackDoc(input), nil
 	}
 	var children []ast.Node
@@ -47,26 +55,34 @@ type xmlNode struct {
 }
 
 func (n *xmlNode) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	return n.decode(d, start, 1)
+}
+
+// decode reads the element opened by start, recursing into children at depth+1.
+func (n *xmlNode) decode(d *xml.Decoder, start xml.StartElement, depth int) error {
+	if depth > maxXMLDepth {
+		return &DepthLimitError{Format: FormatXML, Limit: maxXMLDepth}
+	}
 	n.XMLName = start.Name
 	n.Attrs = start.Attr
 	for {
 		tok, err := d.Token()
 		if err != nil {
-			break
+			return err
 		}
 		switch t := tok.(type) {
 		case xml.StartElement:
 			var child xmlNode
-			if err := d.DecodeElement(&child, &t); err == nil {
-				n.Children = append(n.Children, child)
+			if err := child.decode(d, t, depth+1); err != nil {
+				return err
 			}
+			n.Children = append(n.Children, child)
 		case xml.CharData:
 			n.Content += string(t)
 		case xml.EndElement:
 			return nil
 		}
 	}
-	return nil
 }
 
 func parseXMLRoot(input []byte) (*xmlNode, error) {

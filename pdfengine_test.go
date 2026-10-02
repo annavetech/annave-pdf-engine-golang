@@ -14,6 +14,7 @@ import (
 	"image/png"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	pdfengine "github.com/annavetech/pdfengine"
@@ -204,6 +205,27 @@ func TestConvert_InvalidInputReturnsInspectableError(t *testing.T) {
 	}
 	if pe.Stage != pdfengine.StageInput {
 		t.Errorf("Error.Stage = %q, want %q", pe.Stage, pdfengine.StageInput)
+	}
+}
+
+// TestConvert_DepthLimitReturnsParseFailed proves an auto-detected XML file past the nesting cap fails with ENGINE_ERR_PARSE_FAILED.
+func TestConvert_DepthLimitReturnsParseFailed(t *testing.T) {
+	e := mustNewEngine(t)
+	nested := strings.Repeat("<l>", 301) + "x" + strings.Repeat("</l>", 301)
+
+	_, err := e.Convert(context.Background(), []byte(nested), pdfengine.FormatAuto)
+	var pe *pdfengine.Error
+	if !errors.As(err, &pe) {
+		t.Fatalf("errors.As(err, *pdfengine.Error) failed for: %v", err)
+	}
+	if pe.Code != "ENGINE_ERR_PARSE_FAILED" {
+		t.Errorf("Error.Code = %q, want %q", pe.Code, "ENGINE_ERR_PARSE_FAILED")
+	}
+	if pe.Stage != pdfengine.StageParser {
+		t.Errorf("Error.Stage = %q, want %q", pe.Stage, pdfengine.StageParser)
+	}
+	if pe.Message != "xml: nesting exceeds the limit of 300 levels" {
+		t.Errorf("Error.Message = %q, want the XML nesting limit message", pe.Message)
 	}
 }
 

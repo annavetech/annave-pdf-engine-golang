@@ -7,6 +7,7 @@ package engine
 import (
 	"bytes"
 	"encoding/base64"
+	"errors"
 	"image"
 	"image/color"
 	"image/gif"
@@ -138,6 +139,94 @@ More content here to ensure multi-node output.
 	}
 }
 
+// TestPipeline_Prepare_SanitisesOnlyDetectedHTML proves auto-detection runs once, before sanitising.
+func TestPipeline_Prepare_SanitisesOnlyDetectedHTML(t *testing.T) {
+	cases := []struct {
+		name       string
+		input      string
+		wantFormat parser.InputFormat
+		check      func(t *testing.T, got string)
+	}{
+		{
+			name:       "html",
+			input:      "<!DOCTYPE html><html><body><script>bad()</script><p>ok</p></body></html>",
+			wantFormat: parser.FormatHTML,
+			check: func(t *testing.T, got string) {
+				if strings.Contains(got, "script") {
+					t.Errorf("prepared text still contains script: %q", got)
+				}
+			},
+		},
+		{
+			name:       "xml",
+			input:      "<note><to>x</to></note>",
+			wantFormat: parser.FormatXML,
+			check: func(t *testing.T, got string) {
+				if got != "<note><to>x</to></note>" {
+					t.Errorf("prepared text = %q, want the input unchanged", got)
+				}
+			},
+		},
+	}
+	p := NewPipeline(mustDefaultConfig(t))
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, format, err := p.prepare(tc.input, parser.FormatAuto)
+			if err != nil {
+				t.Fatalf("prepare() error: %v", err)
+			}
+			if format != tc.wantFormat {
+				t.Errorf("prepare() format = %q, want %q", format, tc.wantFormat)
+			}
+			tc.check(t, got)
+		})
+	}
+}
+
+// TestPipeline_Run_ParserLimitErrors proves parser limit errors reach the caller as ENGINE_ERR_PARSE_FAILED.
+func TestPipeline_Run_ParserLimitErrors(t *testing.T) {
+	nestedXML := strings.Repeat("<l>", 301) + "x" + strings.Repeat("</l>", 301)
+	var nestedYAML strings.Builder
+	for i := 0; i < 301; i++ {
+		nestedYAML.WriteString(strings.Repeat("  ", i) + "k:\n")
+	}
+	nestedYAML.WriteString(strings.Repeat("  ", 301) + "v\n")
+	// 80 characters whose three aliases count 3 x (40 + 1) = 123, as each value reached through an alias counts as its length in characters plus one.
+	aliases := "base: &a " + strings.Repeat("y", 40) + "\nfirst: *a\nsecond: *a\nthird: *a"
+
+	cases := []struct {
+		name          string
+		input         string
+		format        parser.InputFormat
+		maxInputChars int
+		want          string
+	}{
+		{"xml", nestedXML, parser.FormatXML, 0, "xml: nesting exceeds the limit of 300 levels"},
+		{"yaml", nestedYAML.String(), parser.FormatYAML, 0, "yaml: nesting exceeds the limit of 300 levels"},
+		{"xml auto-detected", nestedXML, parser.FormatAuto, 0, "xml: nesting exceeds the limit of 300 levels"},
+		{"yaml aliases", aliases, parser.FormatYAML, 100, "yaml: aliases expand past the limit of 100"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := mustDefaultConfig(t)
+			if tc.maxInputChars > 0 {
+				cfg.Limits.Input.MaxInputChars = tc.maxInputChars
+			}
+			_, err := NewPipeline(cfg).Run(tc.input, tc.format)
+			var ae *AnnaveError
+			if !errors.As(err, &ae) {
+				t.Fatalf("Run() error = %v, want *AnnaveError", err)
+			}
+			if ae.Code != "ENGINE_ERR_PARSE_FAILED" {
+				t.Errorf("Code = %q, want %q", ae.Code, "ENGINE_ERR_PARSE_FAILED")
+			}
+			if ae.Message != tc.want {
+				t.Errorf("Message = %q, want %q", ae.Message, tc.want)
+			}
+		})
+	}
+}
+
 // TestPipeline_Run_PNG verifies that a PNG image is correctly converted to a
 // valid PDF, using a small standard 8-bit RGBA image.
 func TestPipeline_Run_PNG(t *testing.T) {
@@ -171,6 +260,18 @@ func TestPipeline_Run_PNGViaExplicitFormatAlias(t *testing.T) {
 	}
 	if len(out) < 1000 {
 		t.Errorf("PDF suspiciously small (%d bytes)", len(out))
+	}
+}
+
+// TestPipeline_Run_SmallPNG proves a normal 10x10 PNG still converts under the image size cap.
+func TestPipeline_Run_SmallPNG(t *testing.T) {
+	p := NewPipeline(mustDefaultConfig(t))
+	out, err := p.Run(string(makePNG(t, 10, 10)), parser.FormatImage)
+	if err != nil {
+		t.Fatalf("pipeline.Run() error for 10x10 PNG: %v", err)
+	}
+	if !bytes.HasPrefix(out, []byte("%PDF-")) {
+		t.Fatalf("output is not a PDF, first bytes: %q", out[:min(16, len(out))])
 	}
 }
 
@@ -299,5 +400,51 @@ func TestPipeline_Run_ImageFormatAliases(t *testing.T) {
 				t.Fatalf("output for %s is not a PDF, first bytes: %q", tc.name, out[:min(16, len(out))])
 			}
 		})
+	}
+}
+
+// TestPipeline_Run_AutoBracketTextIsNotJSON checks that auto-detected text starting with { or [ converts when it is not JSON.
+func TestPipeline_Run_AutoBracketTextIsNotJSON(t *testing.T) {
+	p := NewPipeline(mustDefaultConfig(t))
+	for _, input := range []string{
+		"[Link](https://example.com) is the intro.",
+		"[ ] todo",
+		"{draft} notes",
+	} {
+		t.Run(input, func(t *testing.T) {
+			out, err := p.Run(input, parser.FormatAuto)
+			if err != nil {
+				t.Fatalf("Run(%q, FormatAuto) error: %v", input, err)
+			}
+			if !bytes.HasPrefix(out, []byte("%PDF")) {
+				t.Errorf("Run(%q, FormatAuto) output is not a PDF", input)
+			}
+		})
+	}
+}
+
+// TestPipeline_Run_ExplicitJSONInvalidFails checks that explicit json with invalid input still fails.
+func TestPipeline_Run_ExplicitJSONInvalidFails(t *testing.T) {
+	_, err := NewPipeline(mustDefaultConfig(t)).Run("{draft} notes", parser.FormatJSON)
+	var ae *AnnaveError
+	if !errors.As(err, &ae) {
+		t.Fatalf("Run() error = %v, want *AnnaveError", err)
+	}
+	if ae.Code != "ENGINE_ERR_PARSE_FAILED" {
+		t.Errorf("Code = %q, want %q", ae.Code, "ENGINE_ERR_PARSE_FAILED")
+	}
+}
+
+// TestPipeline_Run_UndecodableNotebookFails checks that a notebook that cannot be decoded is ENGINE_ERR_PARSE_FAILED.
+func TestPipeline_Run_UndecodableNotebookFails(t *testing.T) {
+	for _, f := range []parser.InputFormat{parser.FormatAuto, parser.FormatIPYNB} {
+		_, err := NewPipeline(mustDefaultConfig(t)).Run(`{"cells": [1, 2], "nbformat": 4}`, f)
+		var ae *AnnaveError
+		if !errors.As(err, &ae) {
+			t.Fatalf("Run(%q) error = %v, want *AnnaveError", f, err)
+		}
+		if ae.Code != "ENGINE_ERR_PARSE_FAILED" {
+			t.Errorf("Run(%q) Code = %q, want %q", f, ae.Code, "ENGINE_ERR_PARSE_FAILED")
+		}
 	}
 }

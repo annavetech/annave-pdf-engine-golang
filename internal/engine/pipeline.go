@@ -23,7 +23,7 @@ type Pipeline struct {
 func NewPipeline(cfg *Config) *Pipeline {
 	return &Pipeline{
 		cfg:       cfg,
-		registry:  parser.NewRegistry(),
+		registry:  parser.NewRegistry(cfg.Limits.Input.MaxInputChars),
 		layout:    NewLayoutEngine(),
 		paginator: NewPaginator(),
 	}
@@ -38,9 +38,25 @@ func (p *Pipeline) Run(input string, format parser.InputFormat) ([]byte, error) 
 			p.cfg.msg("ENGINE_ERR_UNSUPPORTED_FORMAT", "format", string(format)))
 	}
 
+	prepared, format, err := p.prepare(input, format)
+	if err != nil {
+		return nil, err
+	}
+
+	doc, err := p.registry.Parse([]byte(prepared), format)
+	if err != nil {
+		return nil, NewError("ENGINE_ERR_PARSE_FAILED", StageParser, err.Error())
+	}
+
+	return p.runFromDoc(doc)
+}
+
+// prepare checks the input size, normalises text input, resolves FormatAuto once,
+// and sanitises only input whose format is HTML.
+func (p *Pipeline) prepare(input string, format parser.InputFormat) (string, parser.InputFormat, error) {
 	maxBytes := p.cfg.Limits.Input.MaxFileSizeBytes
 	if len(input) > maxBytes {
-		return nil, NewError("ENGINE_ERR_FILE_TOO_LARGE", StageInput,
+		return "", format, NewError("ENGINE_ERR_FILE_TOO_LARGE", StageInput,
 			p.cfg.msg("ENGINE_ERR_FILE_TOO_LARGE", "max_mb", maxBytes/1024/1024))
 	}
 
@@ -49,30 +65,22 @@ func (p *Pipeline) Run(input string, format parser.InputFormat) ([]byte, error) 
 	isBinary := p.registry.IsBinaryFormat(format) ||
 		(format == parser.FormatAuto && p.registry.IsBinaryInput([]byte(input)))
 
-	var (
-		normalized string
-		err        error
-	)
-	if isBinary {
-		normalized = input
-	} else {
+	normalized := input
+	if !isBinary {
+		var err error
 		normalized, err = NormalizeInput(input, p.cfg)
 		if err != nil {
-			return nil, err
+			return "", format, err
 		}
 	}
 
-	if !isBinary && (format == parser.FormatHTML ||
-		(format == parser.FormatAuto && p.registry.LooksLikeHTML([]byte(normalized)))) {
+	if format == parser.FormatAuto {
+		format = p.registry.Detect([]byte(normalized))
+	}
+	if format == parser.FormatHTML {
 		normalized = SanitizeHTML(normalized)
 	}
-
-	doc, err := p.registry.Parse([]byte(normalized), format)
-	if err != nil {
-		return nil, NewError("ENGINE_ERR_PARSE_FAILED", StageParser, err.Error())
-	}
-
-	return p.runFromDoc(doc)
+	return normalized, format, nil
 }
 
 // RunFromDoc allows re-use when a DocumentNode is already available (e.g., DOCX).

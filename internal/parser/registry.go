@@ -43,40 +43,41 @@ var extToFormat = map[string]InputFormat{
 }
 
 type Registry struct {
-	ordered  []Parser
+	ordered  []InputFormat
 	byFormat map[InputFormat]Parser
 }
 
-func NewRegistry() *Registry {
+// NewRegistry returns a Registry whose YAML parser limits aliases to maxInputChars, where each value reached through an alias counts as its length in characters plus one.
+func NewRegistry(maxInputChars int) *Registry {
 	return &Registry{
-		ordered: []Parser{
+		ordered: []InputFormat{
 			// Binary formats first: fast magic-byte checks must precede text parsers.
-			&DocxParser{},
-			&ImageParser{},
-			&IpynbParser{},
-			&JsonParser{},
-			&XmlParser{},
-			&HtmlParser{},
-			&CsvParser{},
-			&YamlParser{},
-			&RstParser{},
-			&MdParser{},
-			&TxtParser{},
+			FormatDocx,
+			FormatImage,
+			FormatIPYNB,
+			FormatJSON,
+			FormatXML,
+			FormatHTML,
+			FormatCSV,
+			FormatYAML,
+			FormatRST,
+			FormatMd,
+			FormatTxt,
 		},
-		byFormat: newByFormat(),
+		byFormat: newByFormat(maxInputChars),
 	}
 }
 
 // newByFormat builds the format-name-to-parser table, including image
 // extension aliases (png, jpg, jpeg, gif, webp) routed to ImageParser.
-func newByFormat() map[InputFormat]Parser {
+func newByFormat(maxInputChars int) map[InputFormat]Parser {
 	byFormat := map[InputFormat]Parser{
 		FormatTxt:   &TxtParser{},
 		FormatMd:    &MdParser{},
 		FormatJSON:  &JsonParser{},
 		FormatHTML:  &HtmlParser{},
 		FormatCSV:   &CsvParser{},
-		FormatYAML:  &YamlParser{},
+		FormatYAML:  &YamlParser{maxAliasChars: maxInputChars},
 		FormatXML:   &XmlParser{},
 		FormatRST:   &RstParser{},
 		FormatIPYNB: &IpynbParser{},
@@ -119,48 +120,48 @@ func (e *UnsupportedFormatError) Error() string {
 // Parse dispatches input to the parser for format, or auto-detects it when
 // format is FormatAuto. An unrecognised format returns *UnsupportedFormatError.
 func (r *Registry) Parse(input []byte, format InputFormat) (*ast.DocumentNode, error) {
-	if format != FormatAuto {
-		p, ok := r.byFormat[format]
-		if !ok {
-			return nil, &UnsupportedFormatError{Format: format}
-		}
-		if len(input) == 0 {
+	if format == FormatAuto {
+		format = r.Detect(input)
+		if format == FormatAuto {
 			return &ast.DocumentNode{Type: "document"}, nil
 		}
-		data := input
-		if !isBinaryFormat(format) {
-			data = bytes.TrimSpace(input)
-			if len(data) == 0 {
-				return &ast.DocumentNode{Type: "document"}, nil
-			}
-		}
-		return p.Parse(data)
 	}
-
+	p, ok := r.byFormat[format]
+	if !ok {
+		return nil, &UnsupportedFormatError{Format: format}
+	}
 	if len(input) == 0 {
 		return &ast.DocumentNode{Type: "document"}, nil
 	}
-
-	if r.IsBinaryInput(input) {
-		for _, p := range r.ordered {
-			if p.CanParse(input) {
-				return p.Parse(input)
-			}
-		}
-		return &ast.DocumentNode{Type: "document"}, nil
-	}
-
-	trimmed := bytes.TrimSpace(input)
-	if len(trimmed) == 0 {
-		return &ast.DocumentNode{Type: "document"}, nil
-	}
-	for _, p := range r.ordered {
-		if p.CanParse(trimmed) {
-			return p.Parse(trimmed)
+	data := input
+	if !isBinaryFormat(format) {
+		data = bytes.TrimSpace(input)
+		if len(data) == 0 {
+			return &ast.DocumentNode{Type: "document"}, nil
 		}
 	}
+	return p.Parse(data)
+}
 
-	return &ast.DocumentNode{Type: "document"}, nil
+// Detect returns the format of the first parser in the ordered list that accepts input.
+// It returns FormatAuto for empty input or when no parser matches.
+func (r *Registry) Detect(input []byte) InputFormat {
+	if len(input) == 0 {
+		return FormatAuto
+	}
+	data := input
+	if !r.IsBinaryInput(input) {
+		data = bytes.TrimSpace(input)
+		if len(data) == 0 {
+			return FormatAuto
+		}
+	}
+	for _, f := range r.ordered {
+		if r.byFormat[f].CanParse(data) {
+			return f
+		}
+	}
+	return FormatAuto
 }
 
 // SupportsFormat reports whether format is FormatAuto or names a
@@ -171,10 +172,6 @@ func (r *Registry) SupportsFormat(format InputFormat) bool {
 	}
 	_, ok := r.byFormat[format]
 	return ok
-}
-
-func (r *Registry) LooksLikeHTML(input []byte) bool {
-	return (&HtmlParser{}).CanParse(input)
 }
 
 func (r *Registry) IsBinaryInput(input []byte) bool {

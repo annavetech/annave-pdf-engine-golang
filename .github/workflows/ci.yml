@@ -38,6 +38,11 @@ jobs:
 
       - run: go test ./... -race
 
+      # The floor's standard library can carry advisories that "stable" does not.
+      - name: govulncheck (floor)
+        if: matrix.leg == 'floor'
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
+
       - name: gofmt
         run: |
           unformatted="$(gofmt -l .)"

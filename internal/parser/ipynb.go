@@ -5,7 +5,10 @@
 package parser
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/annavetech/pdfengine/internal/ast"
@@ -13,14 +16,36 @@ import (
 
 type IpynbParser struct{}
 
+// jsonKeySeen records that a key was present without decoding or copying its value.
+type jsonKeySeen bool
+
+func (k *jsonKeySeen) UnmarshalJSON([]byte) error {
+	*k = true
+	return nil
+}
+
+// jsonNumberSeen records whether a key's value is a JSON number, from its first byte only.
+type jsonNumberSeen bool
+
+func (k *jsonNumberSeen) UnmarshalJSON(b []byte) error {
+	*k = len(b) > 0 && (b[0] == '-' || (b[0] >= '0' && b[0] <= '9'))
+	return nil
+}
+
 func (p *IpynbParser) CanParse(input []byte) bool {
-	var obj map[string]interface{}
-	if err := json.Unmarshal(input, &obj); err != nil {
+	t := bytes.TrimLeft(input, " \t\r\n")
+	if len(t) == 0 || t[0] != '{' {
 		return false
 	}
-	_, hasCells := obj["cells"]
-	_, hasNbformat := obj["nbformat"]
-	return hasCells || hasNbformat
+	// A notebook needs cells and a numeric nbformat. Key matching is as in Parse; other values are skipped, not built.
+	var obj struct {
+		Cells    jsonKeySeen    `json:"cells"`
+		Nbformat jsonNumberSeen `json:"nbformat"`
+	}
+	if err := json.Unmarshal(t, &obj); err != nil {
+		return false
+	}
+	return bool(obj.Cells) && bool(obj.Nbformat)
 }
 
 func (p *IpynbParser) Parse(input []byte) (*ast.DocumentNode, error) {
@@ -49,7 +74,12 @@ func (p *IpynbParser) Parse(input []byte) (*ast.DocumentNode, error) {
 	}
 
 	if err := json.Unmarshal(input, &nb); err != nil {
-		return &ast.DocumentNode{Type: ast.TypeDocument}, nil
+		// A type error names the notebook's own struct type; report the field and JSON kind instead.
+		var te *json.UnmarshalTypeError
+		if errors.As(err, &te) {
+			return nil, fmt.Errorf("ipynb: field %q: unexpected JSON %s", te.Field, te.Value)
+		}
+		return nil, fmt.Errorf("ipynb: %w", err)
 	}
 
 	lang := ""

@@ -32,6 +32,8 @@ input:
 
   # Maximum number of Unicode characters in the normalised input string.
   # Applied after the file is decoded to UTF-8 and line endings are normalised.
+  # Also bounds YAML aliases: the content they expand to may total at most this many characters,
+  # where each value reached through an alias counts as its length in characters plus one.
   #
   # What breaks with wrong values:
   #   Too low:  documents with dense text get rejected mid-conversion.

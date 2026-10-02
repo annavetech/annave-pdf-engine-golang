@@ -7,6 +7,9 @@ package engine
 import (
 	"strings"
 	"testing"
+
+	"github.com/annavetech/pdfengine/internal/ast"
+	"github.com/annavetech/pdfengine/internal/parser"
 )
 
 func TestNormalizeInput(t *testing.T) {
@@ -58,6 +61,11 @@ func TestNormalizeInput(t *testing.T) {
 			want:  "Héllo wörld … こんにちは",
 		},
 		{
+			name:  "strips a leading UTF-8 BOM",
+			input: "\uFEFF# Title",
+			want:  "# Title",
+		},
+		{
 			name:    "rejects input exceeding max character count",
 			input:   strings.Repeat("x", cfg.Limits.Input.MaxInputChars+1),
 			wantErr: true,
@@ -79,6 +87,37 @@ func TestNormalizeInput(t *testing.T) {
 				t.Errorf("NormalizeInput()\ngot:  %q\nwant: %q", got, tc.want)
 			}
 		})
+	}
+}
+
+// TestNormalizeInput_BOMRoundTrip proves a BOM-prefixed file parses with no stray leading character.
+func TestNormalizeInput_BOMRoundTrip(t *testing.T) {
+	cfg := mustDefaultConfig(t)
+	reg := parser.NewRegistry(cfg.Limits.Input.MaxInputChars)
+
+	md, err := NormalizeInput("\uFEFF# Title\n\nBody text.", cfg)
+	if err != nil {
+		t.Fatalf("NormalizeInput(md) error: %v", err)
+	}
+	doc, err := reg.Parse([]byte(md), parser.FormatMd)
+	if err != nil {
+		t.Fatalf("Registry.Parse(md) error: %v", err)
+	}
+	if len(doc.Children) == 0 || doc.Children[0].Type != ast.TypeHeading || doc.Children[0].Text != "Title" {
+		t.Errorf("Markdown first node = %+v, want heading %q", doc.Children, "Title")
+	}
+
+	csv, err := NormalizeInput("\uFEFFName,City\nAnn,Tallinn", cfg)
+	if err != nil {
+		t.Fatalf("NormalizeInput(csv) error: %v", err)
+	}
+	doc, err = reg.Parse([]byte(csv), parser.FormatCSV)
+	if err != nil {
+		t.Fatalf("Registry.Parse(csv) error: %v", err)
+	}
+	if len(doc.Children) != 1 || doc.Children[0].Type != ast.TypeTable ||
+		len(doc.Children[0].Headers) == 0 || doc.Children[0].Headers[0] != "Name" {
+		t.Errorf("CSV = %+v, want a table whose first header is %q", doc.Children, "Name")
 	}
 }
 

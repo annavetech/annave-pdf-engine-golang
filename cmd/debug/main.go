@@ -28,7 +28,7 @@ func main() {
 	fmt.Printf("Input chars: %d\n", len([]rune(normalized)))
 	fmt.Printf("Input lines: %d\n", len(strings.Split(normalized, "\n")))
 
-	reg := parser.NewRegistry()
+	reg := parser.NewRegistry(cfg.Limits.Input.MaxInputChars)
 	doc, _ := reg.Parse([]byte(normalized), parser.FormatMd)
 	fmt.Printf("AST nodes:   %d\n", len(doc.Children))
 	for i, n := range doc.Children {

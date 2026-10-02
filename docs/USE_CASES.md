@@ -150,5 +150,5 @@ annave pdf convert diagram.png -o diagram.pdf
 **What to watch:**
 - Supported formats: PNG, JPEG, GIF, WebP
 - The image is embedded at its original dimensions, scaled to fit within the page's text column width if it would overflow
-- Very large images (dimensions in thousands of pixels) will be scaled down; quality depends on the original resolution
+- Images wider or taller than 4000 pixels are rejected with an error, not scaled down
 - The format is auto-detected from magic bytes, so the file extension does not need to be correct
